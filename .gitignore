@@ -1,0 +1,15 @@
+# OS
+.DS_Store
+
+# Editor
+.vscode/*
+!.vscode/extensions.json
+.idea
+
+# Env files (per-package .gitignore also covers these; kept here for safety)
+.env
+.env.local
+.env.*.local
+
+# Logs
+*.log
