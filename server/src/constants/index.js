@@ -13,3 +13,5 @@ export const ERROR_CODES = {
   CONFLICT: 'CONFLICT',
   INTERNAL_ERROR: 'INTERNAL_ERROR',
 };
+
+export const AUTH_COOKIE_NAME = 'token';
