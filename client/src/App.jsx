@@ -2,18 +2,9 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './features/auth/AuthContext';
 import { RootLayout } from './layouts/RootLayout';
 import { ProtectedRoute } from './components/ProtectedRoute';
-
-function LoginPlaceholder() {
-  return <h1>Login (placeholder)</h1>;
-}
-
-function RegisterPlaceholder() {
-  return <h1>Register (placeholder)</h1>;
-}
-
-function DashboardPlaceholder() {
-  return <h1>Dashboard (placeholder)</h1>;
-}
+import { LoginPage } from './pages/LoginPage';
+import { RegisterPage } from './pages/RegisterPage';
+import { DashboardPage } from './pages/DashboardPage';
 
 function App() {
   return (
@@ -21,10 +12,10 @@ function App() {
       <AuthProvider>
         <Routes>
           <Route element={<RootLayout />}>
-            <Route path="/login" element={<LoginPlaceholder />} />
-            <Route path="/register" element={<RegisterPlaceholder />} />
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/register" element={<RegisterPage />} />
             <Route element={<ProtectedRoute />}>
-              <Route path="/" element={<DashboardPlaceholder />} />
+              <Route path="/" element={<DashboardPage />} />
             </Route>
           </Route>
         </Routes>
