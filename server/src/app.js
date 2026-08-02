@@ -6,6 +6,9 @@ import cookieParser from 'cookie-parser';
 import rateLimit from 'express-rate-limit';
 import { env } from './config/env.js';
 import { ERROR_CODES } from './constants/index.js';
+import authRoutes from './routes/authRoutes.js';
+import userRoutes from './routes/userRoutes.js';
+import walletRoutes from './routes/walletRoutes.js';
 
 export function createApp() {
   const app = express();
@@ -25,6 +28,10 @@ export function createApp() {
   app.get('/api/health', (req, res) => {
     res.json({ status: 'ok', environment: env.NODE_ENV });
   });
+
+  app.use('/api/auth', authRoutes);
+  app.use('/api/users', userRoutes);
+  app.use('/api/wallet', walletRoutes);
 
   app.use((req, res) => {
     res.status(404).json({
