@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../features/auth/useAuth.js';
 import { getWallet } from '../services/walletService.js';
 
@@ -42,6 +43,10 @@ export function DashboardPage() {
       ) : (
         !error && <p>Loading wallet...</p>
       )}
+
+      <p>
+        <Link to="/market">View market</Link>
+      </p>
     </div>
   );
 }
