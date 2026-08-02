@@ -5,6 +5,7 @@ import morgan from 'morgan';
 import cookieParser from 'cookie-parser';
 import rateLimit from 'express-rate-limit';
 import { env } from './config/env.js';
+import { ERROR_CODES } from './constants/index.js';
 
 export function createApp() {
   const app = express();
@@ -26,13 +27,21 @@ export function createApp() {
   });
 
   app.use((req, res) => {
-    res.status(404).json({ error: { message: 'Not found' } });
+    res.status(404).json({
+      error: { code: ERROR_CODES.NOT_FOUND, message: 'Not found' },
+    });
   });
 
+  // eslint-disable-next-line no-unused-vars
   app.use((err, req, res, next) => {
     const status = err.status || 500;
+    const code = err.code || ERROR_CODES.INTERNAL_ERROR;
     res.status(status).json({
-      error: { message: err.message || 'Internal server error' },
+      error: {
+        code,
+        message: err.message || 'Internal server error',
+        ...(err.details ? { details: err.details } : {}),
+      },
     });
   });
 
