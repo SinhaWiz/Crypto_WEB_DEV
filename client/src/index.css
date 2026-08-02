@@ -109,3 +109,24 @@ code {
   padding: 4px 8px;
   background: var(--code-bg);
 }
+
+.app-shell {
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+}
+
+.disclaimer-banner {
+  background: var(--accent-bg);
+  border-bottom: 1px solid var(--accent-border);
+  color: var(--text-h);
+  font-size: 14px;
+  line-height: 140%;
+  padding: 10px 16px;
+  text-align: center;
+}
+
+.app-main {
+  flex: 1;
+  padding: 24px 16px;
+}
