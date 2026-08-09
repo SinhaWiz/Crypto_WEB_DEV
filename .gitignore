@@ -6,6 +6,9 @@
 !.vscode/extensions.json
 .idea
 
+docs/
+context.md
+
 # Env files (per-package .gitignore also covers these; kept here for safety)
 .env
 .env.local
