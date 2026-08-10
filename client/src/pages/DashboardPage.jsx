@@ -47,6 +47,9 @@ export function DashboardPage() {
       <p>
         <Link to="/market">View market</Link>
       </p>
+      <p>
+        <Link to="/portfolio">View portfolio</Link>
+      </p>
     </div>
   );
 }

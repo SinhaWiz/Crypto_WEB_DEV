@@ -228,6 +228,12 @@ code {
   text-align: left;
 }
 
+.portfolio-page {
+  max-width: 920px;
+  margin: 0 auto;
+  text-align: left;
+}
+
 .coin-list {
   list-style: none;
   margin: 16px 0 0;
@@ -416,4 +422,129 @@ code {
 .form-success {
   color: #1f9d55;
   font-size: 14px;
+}
+
+.portfolio-totals {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin: 16px 0;
+}
+
+.portfolio-totals div {
+  display: grid;
+  gap: 4px;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.portfolio-totals span {
+  font-size: 13px;
+}
+
+.portfolio-totals strong {
+  color: var(--text-h);
+  font-size: 20px;
+}
+
+.allocation-chart {
+  display: grid;
+  gap: 10px;
+  margin: 18px 0;
+}
+
+.allocation-bar {
+  display: flex;
+  height: 18px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.allocation-bar span:nth-child(1) {
+  background: #1f9d55;
+}
+
+.allocation-bar span:nth-child(2) {
+  background: #2f80ed;
+}
+
+.allocation-bar span:nth-child(3) {
+  background: #f2c94c;
+}
+
+.allocation-bar span:nth-child(4) {
+  background: #eb5757;
+}
+
+.allocation-bar span:nth-child(5) {
+  background: #9b51e0;
+}
+
+.allocation-bar span:nth-child(6) {
+  background: #00a6a6;
+}
+
+.allocation-chart ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.allocation-chart li {
+  display: inline-flex;
+  gap: 6px;
+  font-size: 14px;
+}
+
+.data-section {
+  margin-top: 22px;
+}
+
+.table-wrap {
+  width: 100%;
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 720px;
+}
+
+th,
+td {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+  white-space: nowrap;
+}
+
+tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+td,
+th {
+  font-variant-numeric: tabular-nums;
+}
+
+.positive {
+  color: #1f9d55;
+}
+
+.negative {
+  color: #d3232f;
+}
+
+@media (max-width: 720px) {
+  .portfolio-totals {
+    grid-template-columns: 1fr;
+  }
 }
