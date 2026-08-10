@@ -4,6 +4,7 @@ import helmet from 'helmet';
 import morgan from 'morgan';
 import cookieParser from 'cookie-parser';
 import rateLimit from 'express-rate-limit';
+import mongoose from 'mongoose';
 import { env } from './config/env.js';
 import { ERROR_CODES } from './constants/index.js';
 import authRoutes from './routes/authRoutes.js';
@@ -19,6 +20,10 @@ import adminRoutes from './routes/adminRoutes.js';
 export function createApp() {
   const app = express();
 
+  if (env.NODE_ENV === 'production') {
+    app.set('trust proxy', 1);
+  }
+
   app.use(helmet());
   app.use(cors({ origin: env.CLIENT_ORIGIN, credentials: true }));
   app.use(express.json());
@@ -32,7 +37,12 @@ export function createApp() {
   );
 
   app.get('/api/health', (req, res) => {
-    res.json({ status: 'ok', environment: env.NODE_ENV });
+    const databaseConnected = mongoose.connection.readyState === 1;
+    res.status(databaseConnected ? 200 : 503).json({
+      status: databaseConnected ? 'ok' : 'degraded',
+      environment: env.NODE_ENV,
+      database: databaseConnected ? 'connected' : 'disconnected',
+    });
   });
 
   app.use('/api/auth', authRoutes);
