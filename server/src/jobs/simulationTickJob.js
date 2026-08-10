@@ -2,9 +2,11 @@ import { env } from '../config/env.js';
 import { SimulationSession } from '../models/SimulationSession.js';
 import { SimulatedPriceTick } from '../models/SimulatedPriceTick.js';
 import { generateSessionTicks } from '../services/simulation/engine.js';
+import { emitMarketTicks } from '../socket/marketSocket.js';
 
 let intervalId = null;
 let isRunning = false;
+let socketServer = null;
 
 export async function advanceSimulationTicks() {
   if (isRunning) return;
@@ -20,12 +22,18 @@ export async function advanceSimulationTicks() {
     if (ticks.length > 0) {
       await SimulatedPriceTick.insertMany(ticks, { ordered: false });
     }
+
+    sessions.forEach((session, index) => {
+      emitMarketTicks(socketServer, session.userId.toString(), batches[index]);
+    });
   } finally {
     isRunning = false;
   }
 }
 
-export function startSimulationTickJob() {
+export function startSimulationTickJob(io) {
+  socketServer = io;
+
   if (intervalId) return intervalId;
 
   intervalId = setInterval(() => {

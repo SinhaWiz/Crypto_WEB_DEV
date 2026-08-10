@@ -5,11 +5,11 @@ import { connectDB } from './config/db.js';
 import { createApp } from './app.js';
 import { startHistoricalRefreshJob } from './jobs/historicalRefreshJob.js';
 import { startSimulationTickJob } from './jobs/simulationTickJob.js';
+import { registerMarketSocketHandlers } from './socket/marketSocket.js';
 
 async function start() {
   await connectDB();
   startHistoricalRefreshJob();
-  startSimulationTickJob();
 
   const app = createApp();
   const httpServer = createServer(app);
@@ -17,10 +17,8 @@ async function start() {
     cors: { origin: env.CLIENT_ORIGIN, credentials: true },
   });
 
-  io.on('connection', (socket) => {
-    socket.on('market:subscribe', (symbol) => socket.join(`market:${symbol}`));
-    socket.on('market:unsubscribe', (symbol) => socket.leave(`market:${symbol}`));
-  });
+  registerMarketSocketHandlers(io);
+  startSimulationTickJob(io);
 
   httpServer.listen(env.PORT, () => {
     console.log(`Server listening on port ${env.PORT}`);
