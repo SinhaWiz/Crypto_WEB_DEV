@@ -239,11 +239,29 @@ code {
   padding: 12px 16px;
   border: 1px solid var(--border);
   border-radius: 8px;
+  transition:
+    background-color 180ms ease,
+    border-color 180ms ease;
+}
+
+.coin-card.up {
+  background: rgba(31, 157, 85, 0.1);
+  border-color: rgba(31, 157, 85, 0.45);
+}
+
+.coin-card.down {
+  background: rgba(211, 35, 47, 0.1);
+  border-color: rgba(211, 35, 47, 0.45);
 }
 
 .coin-symbol {
   font-weight: 600;
   color: var(--text-h);
+  text-decoration: none;
+}
+
+.coin-price {
+  font-variant-numeric: tabular-nums;
 }
 
 .coin-change.positive {
@@ -251,5 +269,19 @@ code {
 }
 
 .coin-change.negative {
+  color: #d3232f;
+}
+
+.connection-state {
+  margin-top: -12px;
+  font-size: 13px;
+  text-transform: capitalize;
+}
+
+.connection-state.connected {
+  color: #1f9d55;
+}
+
+.connection-state.disconnected {
   color: #d3232f;
 }
