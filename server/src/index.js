@@ -4,10 +4,12 @@ import { env } from './config/env.js';
 import { connectDB } from './config/db.js';
 import { createApp } from './app.js';
 import { startHistoricalRefreshJob } from './jobs/historicalRefreshJob.js';
+import { startSimulationTickJob } from './jobs/simulationTickJob.js';
 
 async function start() {
   await connectDB();
   startHistoricalRefreshJob();
+  startSimulationTickJob();
 
   const app = createApp();
   const httpServer = createServer(app);
