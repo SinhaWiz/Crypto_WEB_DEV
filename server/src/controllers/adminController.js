@@ -4,6 +4,7 @@ import { AppError } from '../utils/AppError.js';
 import { ERROR_CODES } from '../constants/index.js';
 import { toPublicUser } from '../utils/toPublicUser.js';
 import { createSimulationSeed } from '../services/simulation/engine.js';
+import { writeAdminAudit } from '../services/auditService.js';
 
 const VALID_USER_STATUSES = ['active', 'suspended'];
 const VALID_SESSION_STATUSES = ['active', 'paused'];
@@ -30,6 +31,14 @@ export async function updateUserStatus(req, res) {
   if (!user) {
     throw new AppError('User not found', 404, ERROR_CODES.NOT_FOUND);
   }
+
+  await writeAdminAudit({
+    actorId: req.user.id,
+    action: 'user.status.update',
+    targetUserId: user._id,
+    message: `User status changed to ${status}`,
+    metadata: { status },
+  });
 
   res.json({ user: toPublicUser(user) });
 }
@@ -74,6 +83,13 @@ export async function updateSimulation(req, res) {
     active: await SimulationSession.countDocuments({ status: 'active' }),
     paused: await SimulationSession.countDocuments({ status: 'paused' }),
   };
+
+  await writeAdminAudit({
+    actorId: req.user.id,
+    action: 'simulation.update',
+    message: 'Simulation settings updated',
+    metadata: { updates, resetSeeds: req.body.resetSeeds === true, summary },
+  });
 
   res.json({ simulation: { ...summary, updates } });
 }
