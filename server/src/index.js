@@ -4,12 +4,14 @@ import { env } from './config/env.js';
 import { connectDB } from './config/db.js';
 import { createApp } from './app.js';
 import { startHistoricalRefreshJob } from './jobs/historicalRefreshJob.js';
+import { startPredictionSettlementJob } from './jobs/predictionSettlementJob.js';
 import { startSimulationTickJob } from './jobs/simulationTickJob.js';
 import { registerMarketSocketHandlers } from './socket/marketSocket.js';
 
 async function start() {
   await connectDB();
   startHistoricalRefreshJob();
+  startPredictionSettlementJob();
 
   const app = createApp();
   const httpServer = createServer(app);
