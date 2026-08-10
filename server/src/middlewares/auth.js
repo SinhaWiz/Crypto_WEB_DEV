@@ -18,3 +18,19 @@ export function requireAuth(req, res, next) {
     next(new AppError('Invalid or expired session', 401, ERROR_CODES.UNAUTHORIZED));
   }
 }
+
+export function requireRole(role) {
+  return (req, res, next) => {
+    if (!req.user) {
+      next(new AppError('Authentication required', 401, ERROR_CODES.UNAUTHORIZED));
+      return;
+    }
+
+    if (req.user.role !== role) {
+      next(new AppError('Forbidden', 403, ERROR_CODES.FORBIDDEN));
+      return;
+    }
+
+    next();
+  };
+}

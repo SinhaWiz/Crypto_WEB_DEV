@@ -14,6 +14,7 @@ import tradeRoutes from './routes/tradeRoutes.js';
 import predictionRoutes from './routes/predictionRoutes.js';
 import gamificationRoutes from './routes/gamificationRoutes.js';
 import learningRoutes from './routes/learningRoutes.js';
+import adminRoutes from './routes/adminRoutes.js';
 
 export function createApp() {
   const app = express();
@@ -42,6 +43,7 @@ export function createApp() {
   app.use('/api/predictions', predictionRoutes);
   app.use('/api', gamificationRoutes);
   app.use('/api/learning', learningRoutes);
+  app.use('/api/admin', adminRoutes);
 
   app.use((req, res) => {
     res.status(404).json({
