@@ -67,3 +67,7 @@ CLIENT_ORIGIN=https://<client-host>
 ```
 
 The API and Socket.io server both use this value for credentialed CORS.
+
+## Phase 7.4 - Staging Validation
+
+Before promoting a staging deployment, run the checklist in [`docs/staging-validation.md`](./staging-validation.md). It covers environment wiring, API smoke tests, the product golden path, jobs/sockets, and the educational-only compliance review.

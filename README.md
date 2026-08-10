@@ -30,3 +30,7 @@ An educational crypto trading simulator built with a raw React frontend and an E
 ## Repository Plan
 
 See [`plan.md`](./plan.md) for the implementation roadmap, architecture decisions, data model, API surface, and delivery phases.
+
+## Deployment
+
+See [`docs/deployment.md`](./docs/deployment.md) and [`docs/staging-validation.md`](./docs/staging-validation.md) for deployment setup and staging validation.
