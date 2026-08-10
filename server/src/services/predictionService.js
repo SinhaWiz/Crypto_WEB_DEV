@@ -3,6 +3,7 @@ import { ERROR_CODES, SUPPORTED_SYMBOLS } from '../constants/index.js';
 import { PredictionChallenge } from '../models/PredictionChallenge.js';
 import { Wallet } from '../models/Wallet.js';
 import { AppError } from '../utils/AppError.js';
+import { evaluateAchievements } from './achievementService.js';
 import { getCurrentSimulatedPrice } from './tradeService.js';
 
 const DEFAULT_DURATION_MINUTES = 5;
@@ -70,6 +71,7 @@ export async function createPrediction(userId, input) {
       prediction = created;
     });
 
+    await evaluateAchievements(userId);
     return prediction;
   } finally {
     await mongoSession.endSession();
@@ -109,6 +111,10 @@ export async function settlePrediction(prediction) {
       await current.save({ session: mongoSession });
       settled = current;
     });
+
+    if (settled?.userId) {
+      await evaluateAchievements(settled.userId);
+    }
 
     return settled;
   } finally {

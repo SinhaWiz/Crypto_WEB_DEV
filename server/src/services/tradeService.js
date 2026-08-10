@@ -5,6 +5,7 @@ import { SimulationSession } from '../models/SimulationSession.js';
 import { Transaction } from '../models/Transaction.js';
 import { Wallet } from '../models/Wallet.js';
 import { AppError } from '../utils/AppError.js';
+import { evaluateAchievements } from './achievementService.js';
 import { getAnchorPriceBDT, getLatestSimulatedPrice } from './simulation/engine.js';
 
 const TRADE_FEE_RATE = 0.001;
@@ -85,6 +86,7 @@ export async function buy({ userId, symbol, quantity }) {
       result = { wallet, holding, transaction: transaction[0] };
     });
 
+    await evaluateAchievements(userId);
     return result;
   } finally {
     await mongoSession.endSession();
@@ -142,6 +144,7 @@ export async function sell({ userId, symbol, quantity }) {
       result = { wallet, holding, transaction: transaction[0] };
     });
 
+    await evaluateAchievements(userId);
     return result;
   } finally {
     await mongoSession.endSession();

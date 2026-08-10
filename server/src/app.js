@@ -12,6 +12,7 @@ import walletRoutes from './routes/walletRoutes.js';
 import coinRoutes from './routes/coinRoutes.js';
 import tradeRoutes from './routes/tradeRoutes.js';
 import predictionRoutes from './routes/predictionRoutes.js';
+import gamificationRoutes from './routes/gamificationRoutes.js';
 
 export function createApp() {
   const app = express();
@@ -38,6 +39,7 @@ export function createApp() {
   app.use('/api/coins', coinRoutes);
   app.use('/api', tradeRoutes);
   app.use('/api/predictions', predictionRoutes);
+  app.use('/api', gamificationRoutes);
 
   app.use((req, res) => {
     res.status(404).json({
