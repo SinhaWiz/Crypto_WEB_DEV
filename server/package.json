@@ -11,7 +11,8 @@
     "start": "node src/index.js",
     "test": "node --test tests/",
     "lint": "oxlint",
-    "seed:history": "node src/scripts/seedHistory.js"
+    "seed:history": "node src/scripts/seedHistory.js",
+    "db:prepare": "node src/scripts/prepareDatabase.js"
   },
   "keywords": [],
   "author": "",
