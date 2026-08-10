@@ -147,3 +147,65 @@ export async function sell({ userId, symbol, quantity }) {
     await mongoSession.endSession();
   }
 }
+
+export async function getPortfolio(userId) {
+  const [wallet, holdings] = await Promise.all([
+    Wallet.findOne({ userId }),
+    PortfolioHolding.find({ userId, quantity: { $gt: 0 } }).sort({ symbol: 1 }),
+  ]);
+
+  if (!wallet) {
+    throw new AppError('Wallet not found', 404, ERROR_CODES.NOT_FOUND);
+  }
+
+  const valuedHoldings = await Promise.all(
+    holdings.map(async (holding) => {
+      const currentPriceBDT = await getCurrentSimulatedPrice(userId, holding.symbol);
+      const marketValueBDT = holding.quantity * currentPriceBDT;
+      const unrealizedPnlBDT = (currentPriceBDT - holding.averageBuyPriceBDT) * holding.quantity;
+
+      return {
+        id: holding._id,
+        symbol: holding.symbol,
+        quantity: holding.quantity,
+        averageBuyPriceBDT: holding.averageBuyPriceBDT,
+        currentPriceBDT,
+        marketValueBDT,
+        realizedPnlBDT: holding.realizedPnlBDT,
+        unrealizedPnlBDT,
+      };
+    })
+  );
+
+  const holdingsValueBDT = valuedHoldings.reduce((sum, holding) => sum + holding.marketValueBDT, 0);
+  wallet.portfolioValueBDT = holdingsValueBDT;
+  await wallet.save();
+
+  return {
+    wallet,
+    holdings: valuedHoldings,
+    totals: {
+      cashBalanceBDT: wallet.cashBalanceBDT,
+      holdingsValueBDT,
+      totalValueBDT: wallet.cashBalanceBDT + holdingsValueBDT,
+    },
+  };
+}
+
+export async function listTransactions(userId, { page = 1, limit = 25 } = {}) {
+  const skip = (page - 1) * limit;
+  const [items, total] = await Promise.all([
+    Transaction.find({ userId }).sort({ createdAt: -1 }).skip(skip).limit(limit),
+    Transaction.countDocuments({ userId }),
+  ]);
+
+  return {
+    items,
+    pagination: {
+      page,
+      limit,
+      total,
+      pages: Math.max(1, Math.ceil(total / limit)),
+    },
+  };
+}
