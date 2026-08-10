@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { getCoin, getCoinHistory } from '../services/coinsService';
+import { buyCoin, sellCoin } from '../services/tradesService';
 import { useMarketPrices } from '../hooks/useMarketPrices';
 
 const BDT_PER_USD = 120;
@@ -51,8 +52,17 @@ export function CoinDetailPage() {
   const [candles, setCandles] = useState([]);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(true);
+  const [tradeSide, setTradeSide] = useState('buy');
+  const [quantity, setQuantity] = useState('');
+  const [tradeMessage, setTradeMessage] = useState('');
+  const [tradeError, setTradeError] = useState('');
+  const [isSubmittingTrade, setIsSubmittingTrade] = useState(false);
   const { prices, series, connectionState } = useMarketPrices(coin ? [coin] : []);
   const liveCoin = prices[0];
+  const livePriceBDT = liveCoin ? (liveCoin.priceBDT ?? liveCoin.price * BDT_PER_USD) : 0;
+  const parsedQuantity = Number(quantity);
+  const estimatedGrossBDT = Number.isFinite(parsedQuantity) ? parsedQuantity * livePriceBDT : 0;
+  const estimatedFeeBDT = estimatedGrossBDT * 0.001;
 
   useEffect(() => {
     let cancelled = false;
@@ -90,6 +100,30 @@ export function CoinDetailPage() {
     return [...historicalPoints, ...livePoints];
   }, [candles, normalizedSymbol, series]);
 
+  async function handleTradeSubmit(event) {
+    event.preventDefault();
+    setTradeMessage('');
+    setTradeError('');
+
+    if (!Number.isFinite(parsedQuantity) || parsedQuantity <= 0) {
+      setTradeError('Enter a quantity greater than zero');
+      return;
+    }
+
+    setIsSubmittingTrade(true);
+
+    try {
+      const action = tradeSide === 'buy' ? buyCoin : sellCoin;
+      await action({ symbol: normalizedSymbol, quantity: parsedQuantity });
+      setTradeMessage(`${tradeSide === 'buy' ? 'Bought' : 'Sold'} ${parsedQuantity} ${normalizedSymbol}`);
+      setQuantity('');
+    } catch (err) {
+      setTradeError(err.response?.data?.error?.message ?? 'Trade failed');
+    } finally {
+      setIsSubmittingTrade(false);
+    }
+  }
+
   return (
     <div className="coin-detail-page">
       <header className="dashboard-header">
@@ -113,6 +147,57 @@ export function CoinDetailPage() {
                 : `${liveCoin.changePercent24h >= 0 ? '+' : ''}${liveCoin.changePercent24h.toFixed(2)}% over 24h`}
             </p>
           </section>
+          <form className="trade-panel" onSubmit={handleTradeSubmit}>
+            <div className="trade-panel-header">
+              <h2>Trade {normalizedSymbol}</h2>
+              <div className="segmented-control" aria-label="Trade side">
+                <button
+                  type="button"
+                  className={tradeSide === 'buy' ? 'active' : ''}
+                  onClick={() => setTradeSide('buy')}
+                >
+                  Buy
+                </button>
+                <button
+                  type="button"
+                  className={tradeSide === 'sell' ? 'active' : ''}
+                  onClick={() => setTradeSide('sell')}
+                >
+                  Sell
+                </button>
+              </div>
+            </div>
+            <label>
+              Quantity
+              <input
+                type="number"
+                min="0"
+                step="any"
+                value={quantity}
+                onChange={(event) => setQuantity(event.target.value)}
+                placeholder="0.00"
+              />
+            </label>
+            <dl className="trade-estimate">
+              <div>
+                <dt>Live price</dt>
+                <dd>{formatBDT(livePriceBDT)}</dd>
+              </div>
+              <div>
+                <dt>Estimated value</dt>
+                <dd>{formatBDT(estimatedGrossBDT)}</dd>
+              </div>
+              <div>
+                <dt>Fee</dt>
+                <dd>{formatBDT(estimatedFeeBDT)}</dd>
+              </div>
+            </dl>
+            {tradeError && <p className="form-error">{tradeError}</p>}
+            {tradeMessage && <p className="form-success">{tradeMessage}</p>}
+            <button type="submit" disabled={isSubmittingTrade}>
+              {isSubmittingTrade ? 'Submitting...' : `${tradeSide === 'buy' ? 'Buy' : 'Sell'} ${normalizedSymbol}`}
+            </button>
+          </form>
           <PriceChart points={chartPoints} />
         </>
       )}

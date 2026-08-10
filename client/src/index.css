@@ -302,6 +302,7 @@ code {
   width: 100%;
   aspect-ratio: 720 / 260;
   display: block;
+  margin-top: 18px;
   border: 1px solid var(--border);
   border-radius: 8px;
   background: var(--social-bg);
@@ -325,4 +326,94 @@ code {
   padding: 32px;
   border: 1px solid var(--border);
   border-radius: 8px;
+}
+
+.trade-panel {
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.trade-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.segmented-control {
+  display: inline-grid;
+  grid-template-columns: repeat(2, minmax(72px, 1fr));
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.segmented-control button,
+.trade-panel > button {
+  font: inherit;
+  border: 0;
+  background: var(--bg);
+  color: var(--text-h);
+  cursor: pointer;
+}
+
+.segmented-control button {
+  padding: 8px 10px;
+}
+
+.segmented-control button.active,
+.trade-panel > button {
+  background: var(--accent-bg);
+}
+
+.trade-panel label {
+  display: grid;
+  gap: 4px;
+  font-size: 14px;
+}
+
+.trade-panel input {
+  font: inherit;
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--bg);
+  color: var(--text-h);
+}
+
+.trade-estimate {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+}
+
+.trade-estimate div {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.trade-estimate dd {
+  margin: 0;
+  color: var(--text-h);
+  font-variant-numeric: tabular-nums;
+}
+
+.trade-panel > button {
+  padding: 10px 12px;
+  border: 1px solid var(--accent-border);
+  border-radius: 4px;
+}
+
+.trade-panel > button:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+
+.form-success {
+  color: #1f9d55;
+  font-size: 14px;
 }
