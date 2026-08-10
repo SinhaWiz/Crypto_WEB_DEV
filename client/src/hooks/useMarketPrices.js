@@ -3,6 +3,7 @@ import { getSocket } from '../services/socketClient';
 
 export function useMarketPrices(initialCoins = []) {
   const [prices, setPrices] = useState({});
+  const [series, setSeries] = useState({});
   const [flashes, setFlashes] = useState({});
   const [connectionState, setConnectionState] = useState('connecting');
   const previousPricesRef = useRef({});
@@ -29,6 +30,8 @@ export function useMarketPrices(initialCoins = []) {
     const socket = getSocket();
 
     function mergeIncoming(incomingPrices = []) {
+      const now = Date.now();
+
       setPrices((current) => {
         const next = { ...current };
         const nextFlashes = {};
@@ -50,6 +53,21 @@ export function useMarketPrices(initialCoins = []) {
         }
 
         previousPricesRef.current = next;
+        return next;
+      });
+
+      setSeries((current) => {
+        const next = { ...current };
+
+        incomingPrices.forEach((price) => {
+          const point = {
+            symbol: price.symbol,
+            priceBDT: price.priceBDT,
+            timestamp: price.timestamp ?? now,
+          };
+          next[price.symbol] = [...(current[price.symbol] ?? []), point].slice(-120);
+        });
+
         return next;
       });
     }
@@ -106,5 +124,5 @@ export function useMarketPrices(initialCoins = []) {
     [initialCoins, prices]
   );
 
-  return { prices: orderedPrices, flashes, connectionState };
+  return { prices: orderedPrices, flashes, connectionState, series };
 }

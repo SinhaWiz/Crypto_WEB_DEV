@@ -6,6 +6,7 @@ import { LoginPage } from './pages/LoginPage';
 import { RegisterPage } from './pages/RegisterPage';
 import { DashboardPage } from './pages/DashboardPage';
 import { MarketPage } from './pages/MarketPage';
+import { CoinDetailPage } from './pages/CoinDetailPage';
 
 function App() {
   return (
@@ -18,6 +19,7 @@ function App() {
             <Route element={<ProtectedRoute />}>
               <Route path="/" element={<DashboardPage />} />
               <Route path="/market" element={<MarketPage />} />
+              <Route path="/market/:symbol" element={<CoinDetailPage />} />
             </Route>
           </Route>
         </Routes>

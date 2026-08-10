@@ -222,6 +222,12 @@ code {
   text-align: left;
 }
 
+.coin-detail-page {
+  max-width: 760px;
+  margin: 0 auto;
+  text-align: left;
+}
+
 .coin-list {
   list-style: none;
   margin: 16px 0 0;
@@ -284,4 +290,39 @@ code {
 
 .connection-state.disconnected {
   color: #d3232f;
+}
+
+.coin-detail-summary {
+  margin: 12px 0 18px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.price-chart {
+  width: 100%;
+  aspect-ratio: 720 / 260;
+  display: block;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--social-bg);
+}
+
+.price-chart path {
+  fill: none;
+  stroke: #1f9d55;
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.price-chart text {
+  fill: var(--text);
+  font-size: 13px;
+  font-family: var(--mono);
+}
+
+.chart-empty {
+  padding: 32px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
 }
