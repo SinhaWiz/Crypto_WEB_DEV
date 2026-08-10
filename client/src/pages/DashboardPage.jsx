@@ -44,12 +44,14 @@ export function DashboardPage() {
         !error && <p>Loading wallet...</p>
       )}
 
-      <p>
-        <Link to="/market">View market</Link>
-      </p>
-      <p>
-        <Link to="/portfolio">View portfolio</Link>
-      </p>
+      <nav className="dashboard-nav" aria-label="Dashboard sections">
+        <Link to="/market">Market</Link>
+        <Link to="/portfolio">Portfolio</Link>
+        <Link to="/predictions">Predictions</Link>
+        <Link to="/leaderboard">Leaderboard</Link>
+        <Link to="/achievements">Achievements</Link>
+        <Link to="/learning">Learning</Link>
+      </nav>
     </div>
   );
 }
