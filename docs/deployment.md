@@ -48,3 +48,22 @@ curl https://<api-host>/api/health
 ```
 
 A healthy response returns HTTP `200` with `database: "connected"`. A disconnected database returns HTTP `503` so the host can keep the deployment out of rotation.
+
+## Phase 7.3 - Client Deployment Config
+
+The React client is ready for Vercel deployment from the `client/` directory. The included `client/vercel.json` builds with Vite, serves `dist/`, and rewrites routes back to `index.html` so protected React Router pages work on refresh.
+
+Required frontend environment variables:
+
+```text
+VITE_API_BASE_URL=https://<api-host>/api
+VITE_SOCKET_URL=https://<api-host>
+```
+
+After setting the deployed client URL, update the server `CLIENT_ORIGIN` environment variable to the exact frontend origin, for example:
+
+```text
+CLIENT_ORIGIN=https://<client-host>
+```
+
+The API and Socket.io server both use this value for credentialed CORS.
