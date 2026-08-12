@@ -25,18 +25,21 @@ async function start() {
     const token = cookies.jwt;
 
     if (!token) {
-      return next(new Error('Authentication error'));
+      return next();
     }
 
     jwt.verify(token, env.JWT_SECRET, (err, decoded) => {
-      if (err) return next(new Error('Authentication error'));
-      socket.userId = decoded.id;
+      if (!err && decoded) {
+        socket.userId = decoded.id;
+      }
       next();
     });
   });
 
   io.on('connection', (socket) => {
-    socket.join(`user:${socket.userId}`);
+    if (socket.userId) {
+      socket.join(`user:${socket.userId}`);
+    }
 
     socket.on('market:subscribe', async (symbol) => {
       socket.join(`market:${symbol}`);
