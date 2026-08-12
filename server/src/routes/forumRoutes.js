@@ -1,0 +1,15 @@
+import { Router } from 'express';
+import { requireAuth } from '../middlewares/auth.js';
+import { asyncHandler } from '../utils/asyncHandler.js';
+import { getPosts, getPostById, createPost } from '../controllers/forumController.js';
+
+const router = Router();
+
+// All forum routes require authentication
+router.use(requireAuth);
+
+router.get('/posts', asyncHandler(getPosts));
+router.get('/posts/:id', asyncHandler(getPostById));
+router.post('/posts', asyncHandler(createPost));
+
+export default router;
