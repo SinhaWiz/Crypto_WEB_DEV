@@ -1,4 +1,5 @@
 import { ForumPost } from '../models/ForumPost.js';
+import { ForumComment } from '../models/ForumComment.js';
 import { AppError } from '../utils/AppError.js';
 import { ERROR_CODES } from '../constants/index.js';
 
@@ -57,4 +58,41 @@ export async function createPost(req, res) {
   await post.populate('author', 'name');
 
   res.status(201).json({ post });
+}
+
+export async function getComments(req, res) {
+  const { id } = req.params;
+
+  const postExists = await ForumPost.exists({ _id: id });
+  if (!postExists) {
+    throw new AppError('Post not found', 404, ERROR_CODES.NOT_FOUND);
+  }
+
+  const comments = await ForumComment.find({ postId: id })
+    .sort({ createdAt: 1 })
+    .populate('author', 'name')
+    .lean();
+
+  res.json({ comments });
+}
+
+export async function addComment(req, res) {
+  const { id } = req.params;
+  const { content } = req.body;
+  const userId = req.user.id;
+
+  const postExists = await ForumPost.exists({ _id: id });
+  if (!postExists) {
+    throw new AppError('Post not found', 404, ERROR_CODES.NOT_FOUND);
+  }
+
+  const comment = await ForumComment.create({
+    postId: id,
+    author: userId,
+    content
+  });
+
+  await comment.populate('author', 'name');
+
+  res.status(201).json({ comment });
 }

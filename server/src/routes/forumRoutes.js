@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { requireAuth } from '../middlewares/auth.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
-import { getPosts, getPostById, createPost } from '../controllers/forumController.js';
+import { getPosts, getPostById, createPost, getComments, addComment } from '../controllers/forumController.js';
 
 const router = Router();
 
@@ -11,5 +11,8 @@ router.use(requireAuth);
 router.get('/posts', asyncHandler(getPosts));
 router.get('/posts/:id', asyncHandler(getPostById));
 router.post('/posts', asyncHandler(createPost));
+
+router.get('/posts/:id/comments', asyncHandler(getComments));
+router.post('/posts/:id/comments', asyncHandler(addComment));
 
 export default router;
