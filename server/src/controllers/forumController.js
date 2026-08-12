@@ -1,5 +1,7 @@
+import mongoose from 'mongoose';
 import { ForumPost } from '../models/ForumPost.js';
 import { ForumComment } from '../models/ForumComment.js';
+import { ForumVote } from '../models/ForumVote.js';
 import { AppError } from '../utils/AppError.js';
 import { ERROR_CODES } from '../constants/index.js';
 
@@ -95,4 +97,81 @@ export async function addComment(req, res) {
   await comment.populate('author', 'name');
 
   res.status(201).json({ comment });
+}
+
+export async function votePost(req, res) {
+  const { id: postId } = req.params;
+  const { action } = req.body; // 'UP', 'DOWN', or 'REMOVE'
+  const userId = req.user.id;
+
+  if (!['UP', 'DOWN', 'REMOVE'].includes(action)) {
+    throw new AppError('Invalid action', 400, ERROR_CODES.VALIDATION_ERROR);
+  }
+
+  const post = await ForumPost.findById(postId);
+  if (!post) {
+    throw new AppError('Post not found', 404, ERROR_CODES.NOT_FOUND);
+  }
+
+  const existingVote = await ForumVote.findOne({ userId, postId });
+
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
+  try {
+    let upvoteChange = 0;
+    let downvoteChange = 0;
+
+    if (action === 'REMOVE') {
+      if (existingVote) {
+        if (existingVote.voteType === 'UP') upvoteChange = -1;
+        if (existingVote.voteType === 'DOWN') downvoteChange = -1;
+        await ForumVote.deleteOne({ _id: existingVote._id }, { session });
+      }
+    } else {
+      if (existingVote) {
+        if (existingVote.voteType !== action) {
+          if (action === 'UP') {
+            upvoteChange = 1;
+            downvoteChange = -1;
+          } else {
+            upvoteChange = -1;
+            downvoteChange = 1;
+          }
+          existingVote.voteType = action;
+          await existingVote.save({ session });
+        }
+      } else {
+        if (action === 'UP') upvoteChange = 1;
+        if (action === 'DOWN') downvoteChange = 1;
+        
+        await ForumVote.create([{ userId, postId, voteType: action }], { session });
+      }
+    }
+
+    if (upvoteChange !== 0 || downvoteChange !== 0) {
+      const updatedPost = await ForumPost.findByIdAndUpdate(
+        postId,
+        {
+          $inc: {
+            upvotes: upvoteChange,
+            downvotes: downvoteChange,
+            score: upvoteChange - downvoteChange
+          }
+        },
+        { new: true, session }
+      );
+      
+      await session.commitTransaction();
+      res.json({ score: updatedPost.score, upvotes: updatedPost.upvotes, downvotes: updatedPost.downvotes });
+    } else {
+      await session.commitTransaction();
+      res.json({ score: post.score, upvotes: post.upvotes, downvotes: post.downvotes });
+    }
+  } catch (error) {
+    await session.abortTransaction();
+    throw error;
+  } finally {
+    session.endSession();
+  }
 }
