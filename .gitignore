@@ -12,6 +12,7 @@
 .env.*.local
 
 docs/
+backup/
 context.md
 
 # Logs
