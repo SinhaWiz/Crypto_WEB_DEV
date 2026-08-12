@@ -1,0 +1,20 @@
+import cron from 'node-cron';
+import { syncLatestPrices } from '../services/coinService.js';
+import { env } from '../config/env.js';
+
+export const startHistoricalRefreshJob = () => {
+  // Use CRON expression from env or default to every hour
+  const cronExpression = env.HISTORICAL_REFRESH_CRON || '0 * * * *';
+
+  cron.schedule(cronExpression, async () => {
+    console.log(`[JOB] Running historicalRefreshJob at ${new Date().toISOString()}`);
+    try {
+      await syncLatestPrices();
+      console.log(`[JOB] historicalRefreshJob completed successfully.`);
+    } catch (error) {
+      console.error(`[JOB] Error running historicalRefreshJob:`, error.message);
+    }
+  });
+  
+  console.log(`[JOB] historicalRefreshJob scheduled with expression: ${cronExpression}`);
+};

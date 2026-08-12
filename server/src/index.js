@@ -3,6 +3,7 @@ import { Server } from 'socket.io';
 import { env } from './config/env.js';
 import { connectDB } from './config/db.js';
 import { createApp } from './app.js';
+import { startHistoricalRefreshJob } from './jobs/historicalRefreshJob.js';
 
 async function start() {
   await connectDB();
@@ -20,6 +21,9 @@ async function start() {
 
   httpServer.listen(env.PORT, () => {
     console.log(`Server listening on port ${env.PORT}`);
+    
+    // Start background jobs after server starts
+    startHistoricalRefreshJob();
   });
 }
 

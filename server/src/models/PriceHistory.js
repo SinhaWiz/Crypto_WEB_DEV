@@ -9,20 +9,39 @@ const priceHistorySchema = new mongoose.Schema(
       enum: SUPPORTED_SYMBOLS,
       index: true,
     },
-    // We can store a single daily snapshot for simplicity or hourly. Let's just use a timestamp for the data point.
+    provider: {
+      type: String,
+      required: true,
+    },
+    interval: {
+      type: String,
+      required: true,
+    },
     timestamp: {
       type: Date,
       required: true,
-      index: true,
     },
-    price: {
+    open: {
       type: Number,
       required: true,
     },
-    volume24h: {
+    high: {
       type: Number,
-      default: 0,
+      required: true,
     },
+    low: {
+      type: Number,
+      required: true,
+    },
+    close: {
+      type: Number,
+      required: true,
+    },
+    volume: {
+      type: Number,
+      required: true,
+    },
+    // Adding these to keep frontend functional
     marketCap: {
       type: Number,
       default: 0,
@@ -36,6 +55,6 @@ const priceHistorySchema = new mongoose.Schema(
 );
 
 // Compound index for efficient querying of a coin's history
-priceHistorySchema.index({ symbol: 1, timestamp: -1 });
+priceHistorySchema.index({ symbol: 1, interval: 1, timestamp: -1 });
 
 export const PriceHistory = mongoose.model('PriceHistory', priceHistorySchema);
