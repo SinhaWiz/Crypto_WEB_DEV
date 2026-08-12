@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { getCoinHistory } from '../services/coinsService';
+import { getHistory } from '../services/coinsService';
 import { useMarketPrices } from '../hooks/useMarketPrices';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
@@ -19,7 +19,7 @@ export function CoinPage() {
   useEffect(() => {
     const fetchHistory = async () => {
       try {
-        const data = await getCoinHistory(symbol);
+        const data = await getHistory(symbol);
         // data should be an array of PriceHistory documents. Reverse to chronological order for the chart.
         const chronological = data.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
         setHistory(chronological);
