@@ -7,7 +7,7 @@ This file provides critical context, boundaries, and current state information f
 - **Disclaimer**: The platform must constantly display a prominent disclaimer: *"Educational simulator only. All balances, trades, prices, and rewards are virtual; no real cryptocurrency or financial transaction occurs."*
 - **Excluded Features**: Real cryptocurrency wallets, real-money deposits/withdrawals, exchange order execution, futures/margin/shorting, betting or real prize payouts. Do NOT implement these.
 - **Technology Stack**:
-  - Frontend: React 19 (via Vite), React Router, Context API (No heavy CSS frameworks like Tailwind; use Vanilla CSS).
+  - Frontend: React 19 (via Vite), React Router, Context API, Tailwind CSS.
   - Backend: Node.js, Express, MongoDB (Mongoose), Socket.io.
 
 ## 2. Overall Project Plan
@@ -23,18 +23,18 @@ The project is divided into 7 phases (detailed in `plan.md`).
 **CRITICAL NOTE**: The repository underwent a hard reset. Several previously implemented phases (Gamification, Trading, Live Simulation) were completely deleted to align with the core baseline.
 
 **What is currently IMPLEMENTED:**
-- **Backend**: Phase 0 (Foundation) and Phase 1.1-1.3 (Identity and Wallet) are complete. Mongoose models for `User` and `Wallet` exist. Auth routes (`/api/auth`, `/api/users`, `/api/wallet`) and their controllers/services are functional.
+- **Backend (Phase 0 & 1.1-1.3)**: Mongoose models for `User` and `Wallet` exist. Auth routes (`/api/auth`, `/api/users`, `/api/wallet`) and their controllers/services are functional.
+- **Frontend (Phase 1.4-1.5)**: React Router setup, `AuthContext`, and UI components (`DisclaimerBanner`, `ProtectedRoute`, `RootLayout`). Authentication pages (`LoginPage`, `RegisterPage`, and basic `DashboardPage`) are built using Tailwind CSS.
 
 **What is currently MISSING (Pending Reimplementation):**
-- **Frontend**: The `client/src` directory is currently a barebones Vite React template. Phase 1.4 & 1.5 (Frontend App Shell & Auth Pages) have NOT been started. 
 - **Backend & Frontend (Phases 2-7)**: All models, routes, services, sockets, and UI components for Historical Data, Simulation, Trading, Gamification, and Admin features are currently absent from the `main` branch. 
 
 *Note: A standalone "Discussion Forum" module is actively being developed on a separate branch (`module/discussion-forum`), but is not part of this baseline.*
 
 ## 4. What's Next?
-The immediate next steps involve rebuilding the project incrementally starting from where it was reset:
-1. **Phase 1.4 & 1.5**: Build the frontend React Router setup, Auth Context, and Authentication Pages (`LoginPage`, `RegisterPage`, `DashboardPage`).
-2. **Phase 2**: Reintegrate the CoinGecko Historical Market Data adapter and endpoints.
+The immediate next steps involve rebuilding the project incrementally:
+1. **Phase 2**: Reintegrate the CoinGecko Historical Market Data adapter and endpoints. This includes the `PriceHistory` model, backend fetching job, and the frontend `MarketPage`.
+2. **Phase 3**: Implement the Simulation Engine and WebSockets to push live ticks.
 
 ## 5. Agent Behavioral Rules
 1. **Never Assume Existing Code**: Do not assume gamification, trading, or socket implementations exist in the current `main` branch. Verify the `client/src` and `server/src` directories before making assumptions.
