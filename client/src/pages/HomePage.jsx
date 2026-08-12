@@ -7,12 +7,12 @@ export function HomePage() {
   return (
     <div className="bg-white">
       {/* Hero Section */}
-      <div className="relative isolate pt-14 px-6 lg:px-8">
-        <div className="mx-auto max-w-2xl py-20 sm:py-32 lg:py-40 text-center">
-          <h1 className="text-4xl font-extrabold tracking-tight text-gray-900 sm:text-6xl">
-            Learn Crypto Trading <span className="text-purple-600">Without the Risk</span>
+      <div className="relative isolate px-6 lg:px-8">
+        <div className="mx-auto max-w-3xl py-12 sm:py-20 lg:py-24 text-center">
+          <h1 className="text-4xl font-extrabold tracking-tight text-gray-900 sm:text-5xl md:text-6xl">
+            Learn Crypto Trading <br className="hidden sm:block" /><span className="text-purple-600">Without the Risk</span>
           </h1>
-          <p className="mt-6 text-lg leading-8 text-gray-600">
+          <p className="mt-6 text-lg md:text-xl leading-8 text-gray-600 max-w-2xl mx-auto">
             A safe, educational simulator designed for university students to practice trading, understand market volatility, and learn portfolio management—completely risk-free.
           </p>
           <div className="mt-10 flex items-center justify-center gap-x-6">
