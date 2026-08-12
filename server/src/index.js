@@ -7,7 +7,7 @@ import { startHistoricalRefreshJob } from './jobs/historicalRefreshJob.js';
 import { startSimulationTickJob, setIoInstance } from './jobs/simulationTickJob.js';
 import { getLatestPrices } from './services/coinService.js';
 import jwt from 'jsonwebtoken';
-import { parse as parseCookie } from 'cookie';
+import { parseCookie } from 'cookie';
 
 async function start() {
   await connectDB();
