@@ -7,6 +7,7 @@ import { RegisterPage } from './pages/RegisterPage';
 import { DashboardPage } from './pages/DashboardPage';
 import { MarketPage } from './pages/MarketPage';
 import { CoinPage } from './pages/CoinPage';
+import { HomePage } from './pages/HomePage';
 // Remove default Vite styles as we are using Tailwind
 // import './App.css';
 
@@ -15,7 +16,7 @@ function App() {
     <AuthProvider>
       <Routes>
         <Route path="/" element={<RootLayout />}>
-          <Route index element={<Navigate to="/dashboard" replace />} />
+          <Route index element={<HomePage />} />
           <Route path="login" element={<LoginPage />} />
           <Route path="register" element={<RegisterPage />} />
           <Route
