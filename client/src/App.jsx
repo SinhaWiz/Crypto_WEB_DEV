@@ -6,6 +6,7 @@ import { LoginPage } from './pages/LoginPage';
 import { RegisterPage } from './pages/RegisterPage';
 import { DashboardPage } from './pages/DashboardPage';
 import { MarketPage } from './pages/MarketPage';
+import { CoinPage } from './pages/CoinPage';
 // Remove default Vite styles as we are using Tailwind
 // import './App.css';
 
@@ -26,6 +27,7 @@ function App() {
             }
           />
           <Route path="market" element={<MarketPage />} />
+          <Route path="market/:symbol" element={<CoinPage />} />
           {/* Fallback route */}
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Route>
