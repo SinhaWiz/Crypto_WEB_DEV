@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { httpClient } from '../../services/httpClient';
+import { connectSocket, disconnectSocket } from '../../services/socketClient';
 
 const AuthContext = createContext(null);
 
@@ -16,9 +17,11 @@ export function AuthProvider({ children }) {
       ]);
       setUser(userRes.user);
       setWallet(walletRes.wallet);
+      connectSocket();
     } catch (err) {
       setUser(null);
       setWallet(null);
+      disconnectSocket();
     } finally {
       setLoading(false);
     }
@@ -48,6 +51,7 @@ export function AuthProvider({ children }) {
     // For now we'll just reset state. If we add /api/auth/logout later we call it here.
     setUser(null);
     setWallet(null);
+    disconnectSocket();
   };
 
   return (
