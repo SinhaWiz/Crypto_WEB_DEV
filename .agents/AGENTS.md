@@ -25,16 +25,16 @@ The project is divided into 7 phases (detailed in `plan.md`).
 **What is currently IMPLEMENTED:**
 - **Backend (Phase 0 & 1.1-1.3)**: Mongoose models for `User` and `Wallet` exist. Auth routes (`/api/auth`, `/api/users`, `/api/wallet`) and their controllers/services are functional.
 - **Frontend (Phase 1.4-1.5)**: React Router setup, `AuthContext`, and UI components (`DisclaimerBanner`, `ProtectedRoute`, `RootLayout`). Authentication pages (`LoginPage`, `RegisterPage`, and basic `DashboardPage`) are built using Tailwind CSS.
+- **Phase 2 (Historical Market Data)**: The strict `adapter.js` interface, `PriceHistory` OHLCV Mongoose model, `historicalRefreshJob.js` (cron), `seed:history` script, and `/api/coins/:symbol` route are implemented. The frontend `MarketPage` successfully displays live fetched coin prices.
 
 **What is currently MISSING (Pending Reimplementation):**
-- **Backend & Frontend (Phases 2-7)**: All models, routes, services, sockets, and UI components for Historical Data, Simulation, Trading, Gamification, and Admin features are currently absent from the `main` branch. 
+- **Backend & Frontend (Phases 3-7)**: All models, routes, services, sockets, and UI components for Simulation, Trading, Gamification, and Admin features are currently absent from the `main` branch. 
 
 *Note: A standalone "Discussion Forum" module is actively being developed on a separate branch (`module/discussion-forum`), but is not part of this baseline.*
 
 ## 4. What's Next?
 The immediate next steps involve rebuilding the project incrementally:
-1. **Phase 2**: Reintegrate the CoinGecko Historical Market Data adapter and endpoints. This includes the `PriceHistory` model, backend fetching job, and the frontend `MarketPage`.
-2. **Phase 3**: Implement the Simulation Engine and WebSockets to push live ticks.
+1. **Phase 3**: Implement the Simulation Engine and WebSockets to push live ticks. This includes the `SimulationSession` model and the `simulationTickJob.js`.
 
 ## 5. Agent Behavioral Rules
 1. **Never Assume Existing Code**: Do not assume gamification, trading, or socket implementations exist in the current `main` branch. Verify the `client/src` and `server/src` directories before making assumptions.
