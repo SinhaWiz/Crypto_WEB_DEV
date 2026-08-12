@@ -5,6 +5,7 @@ import { ProtectedRoute } from './components/ProtectedRoute';
 import { LoginPage } from './pages/LoginPage';
 import { RegisterPage } from './pages/RegisterPage';
 import { DashboardPage } from './pages/DashboardPage';
+import { MarketPage } from './pages/MarketPage';
 // Remove default Vite styles as we are using Tailwind
 // import './App.css';
 
@@ -24,6 +25,7 @@ function App() {
               </ProtectedRoute>
             }
           />
+          <Route path="market" element={<MarketPage />} />
           {/* Fallback route */}
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Route>

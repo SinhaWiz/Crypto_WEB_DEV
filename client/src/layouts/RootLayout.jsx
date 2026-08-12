@@ -16,6 +16,11 @@ export function RootLayout() {
               <Link to="/" className="flex-shrink-0 flex items-center">
                 <span className="font-bold text-xl text-purple-600 tracking-tight">CryptoSim</span>
               </Link>
+              <div className="ml-10 flex space-x-4">
+                <Link to="/market" className="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium transition-colors">
+                  Market
+                </Link>
+              </div>
             </div>
             
             <div className="flex items-center space-x-4">
