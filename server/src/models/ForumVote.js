@@ -7,19 +7,22 @@ const forumVoteSchema = new Schema(
     userId: {
       type: Schema.Types.ObjectId,
       ref: 'User',
-      required: true,
+      required: [true, 'User ID is required to cast a vote'],
       index: true,
     },
     postId: {
       type: Schema.Types.ObjectId,
       ref: 'ForumPost',
-      required: true,
+      required: [true, 'Post ID is required to cast a vote'],
       index: true,
     },
     voteType: {
       type: String,
-      enum: ['UP', 'DOWN'],
-      required: true,
+      enum: {
+        values: ['UP', 'DOWN'],
+        message: 'Vote type must be either UP or DOWN',
+      },
+      required: [true, 'Vote type is required'],
     },
   },
   { timestamps: true }

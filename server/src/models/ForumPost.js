@@ -6,22 +6,22 @@ const forumPostSchema = new Schema(
   {
     title: {
       type: String,
-      required: true,
+      required: [true, 'Post title is required'],
       trim: true,
-      minlength: 5,
-      maxlength: 100,
+      minlength: [5, 'Post title must be at least 5 characters long'],
+      maxlength: [100, 'Post title cannot exceed 100 characters'],
     },
     content: {
       type: String,
-      required: true,
+      required: [true, 'Post content is required'],
       trim: true,
-      minlength: 10,
-      maxlength: 2000,
+      minlength: [10, 'Post content must be at least 10 characters long'],
+      maxlength: [2000, 'Post content cannot exceed 2000 characters'],
     },
     author: {
       type: Schema.Types.ObjectId,
       ref: 'User',
-      required: true,
+      required: [true, 'Post author is required'],
     },
     upvotes: {
       type: Number,
