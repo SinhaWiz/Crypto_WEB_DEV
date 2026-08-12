@@ -11,10 +11,6 @@ import authRoutes from './routes/authRoutes.js';
 import userRoutes from './routes/userRoutes.js';
 import walletRoutes from './routes/walletRoutes.js';
 import coinRoutes from './routes/coinRoutes.js';
-import tradeRoutes from './routes/tradeRoutes.js';
-import predictionRoutes from './routes/predictionRoutes.js';
-import gamificationRoutes from './routes/gamificationRoutes.js';
-import learningRoutes from './routes/learningRoutes.js';
 import adminRoutes from './routes/adminRoutes.js';
 import forumRoutes from './routes/forumRoutes.js';
 
@@ -50,10 +46,6 @@ export function createApp() {
   app.use('/api/users', userRoutes);
   app.use('/api/wallet', walletRoutes);
   app.use('/api/coins', coinRoutes);
-  app.use('/api', tradeRoutes);
-  app.use('/api/predictions', predictionRoutes);
-  app.use('/api', gamificationRoutes);
-  app.use('/api/learning', learningRoutes);
   app.use('/api/admin', adminRoutes);
   app.use('/api/forum', forumRoutes);
 

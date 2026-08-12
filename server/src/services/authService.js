@@ -1,10 +1,8 @@
 import bcrypt from 'bcryptjs';
 import { User } from '../models/User.js';
 import { Wallet } from '../models/Wallet.js';
-import { SimulationSession } from '../models/SimulationSession.js';
 import { AppError } from '../utils/AppError.js';
 import { ERROR_CODES } from '../constants/index.js';
-import { createSimulationSeed } from './simulation/engine.js';
 
 const SALT_ROUNDS = 10;
 
@@ -17,13 +15,8 @@ export async function registerUser({ name, email, password }) {
   const passwordHash = await bcrypt.hash(password, SALT_ROUNDS);
   const user = await User.create({ name, email, passwordHash });
   const wallet = await Wallet.create({ userId: user._id });
-  const simulationSession = await SimulationSession.create({
-    userId: user._id,
-    seed: createSimulationSeed(user._id),
-    difficulty: user.difficulty,
-  });
 
-  return { user, wallet, simulationSession };
+  return { user, wallet };
 }
 
 export async function loginUser({ email, password }) {
