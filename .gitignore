@@ -11,5 +11,8 @@
 .env.local
 .env.*.local
 
+docs/
+context.md
+
 # Logs
 *.log
