@@ -12,12 +12,15 @@ export function useMarketPrices(initialCoins = []) {
     setPrices((current) => {
       const next = { ...current };
       initialCoins.forEach((coin) => {
-        if (!next[coin.symbol]) {
-          next[coin.symbol] = {
-            symbol: coin.symbol,
-            priceBDT: coin.priceBDT ?? coin.price,
+        const sym = typeof coin === 'string' ? coin : coin.symbol;
+        if (!next[sym]) {
+          next[sym] = {
+            symbol: sym,
+            priceBDT: coin.priceBDT ?? coin.price ?? coin.close,
             timestamp: coin.timestamp,
-            changePercent24h: coin.changePercent24h,
+            percentChange24h: coin.percentChange24h ?? coin.changePercent24h,
+            volume24h: coin.volume24h ?? coin.volume,
+            marketCap: coin.marketCap,
           };
         }
       });
@@ -38,13 +41,19 @@ export function useMarketPrices(initialCoins = []) {
 
         incomingPrices.forEach((price) => {
           const previousPrice = previousPricesRef.current[price.symbol]?.priceBDT;
+          const normalizedPriceBDT = price.priceBDT ?? price.price ?? price.close;
+          const normalizedVolume = price.volume24h ?? price.volume;
+          
           next[price.symbol] = {
             ...current[price.symbol],
             ...price,
+            priceBDT: normalizedPriceBDT,
+            volume24h: normalizedVolume,
+            percentChange24h: price.percentChange24h ?? price.changePercent24h ?? current[price.symbol]?.percentChange24h,
           };
 
-          if (previousPrice && previousPrice !== price.priceBDT) {
-            nextFlashes[price.symbol] = price.priceBDT > previousPrice ? 'up' : 'down';
+          if (previousPrice && previousPrice !== normalizedPriceBDT) {
+            nextFlashes[price.symbol] = normalizedPriceBDT > previousPrice ? 'up' : 'down';
           }
         });
 
@@ -62,7 +71,7 @@ export function useMarketPrices(initialCoins = []) {
         incomingPrices.forEach((price) => {
           const point = {
             symbol: price.symbol,
-            priceBDT: price.priceBDT,
+            priceBDT: price.priceBDT ?? price.price ?? price.close,
             timestamp: price.timestamp ?? now,
           };
           next[price.symbol] = [...(current[price.symbol] ?? []), point].slice(-120);
