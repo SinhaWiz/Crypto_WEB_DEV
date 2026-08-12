@@ -4,7 +4,7 @@ import { SUPPORTED_SYMBOLS } from '../lib/constants';
 
 export function MarketPage() {
   const navigate = useNavigate();
-  const prices = useMarketPrices(SUPPORTED_SYMBOLS);
+  const { prices, flashes } = useMarketPrices(SUPPORTED_SYMBOLS);
 
   return (
     <div className="space-y-6">
@@ -18,10 +18,11 @@ export function MarketPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {prices.map((coin) => {
           const isPositive = coin.percentChange24h >= 0;
+          const flash = flashes[coin.symbol];
           // Apply a quick background flash class based on direction
-          const flashClass = coin.direction === 'up' 
+          const flashClass = flash === 'up' 
             ? 'bg-green-50 transition-colors duration-300' 
-            : coin.direction === 'down' 
+            : flash === 'down' 
             ? 'bg-red-50 transition-colors duration-300' 
             : 'bg-white transition-colors duration-1000';
 
@@ -53,9 +54,9 @@ export function MarketPage() {
               <div className="mt-4">
                 <p className="text-sm text-gray-500 mb-1">Simulated Price</p>
                 <p className="text-3xl font-extrabold text-gray-900 flex items-center">
-                  ${coin.price?.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 6 })}
-                  {coin.direction === 'up' && <span className="text-green-500 text-xl ml-2">↑</span>}
-                  {coin.direction === 'down' && <span className="text-red-500 text-xl ml-2">↓</span>}
+                  ${coin.priceBDT?.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 6 })}
+                  {flash === 'up' && <span className="text-green-500 text-xl ml-2">↑</span>}
+                  {flash === 'down' && <span className="text-red-500 text-xl ml-2">↓</span>}
                 </p>
               </div>
               <div className="mt-4 pt-4 border-t border-gray-100 flex justify-between">

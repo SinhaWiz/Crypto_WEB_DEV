@@ -11,9 +11,10 @@ export function CoinPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Get live price for this coin
-  const prices = useMarketPrices([symbol]);
+  // Get live price and series for this coin
+  const { prices, flashes, series } = useMarketPrices([symbol]);
   const liveCoin = prices.find((p) => p.symbol === symbol);
+  const liveSeries = series[symbol] || [];
 
   useEffect(() => {
     const fetchHistory = async () => {
@@ -50,16 +51,18 @@ export function CoinPage() {
     );
   }
 
-  // Combine historical data with the latest live price
+  // Combine historical data with the latest live series
   const chartData = [...history.map(h => ({
     time: new Date(h.timestamp).toLocaleDateString(),
-    price: h.close || h.priceBDT,
+    price: h.close,
   }))];
 
-  if (liveCoin && liveCoin.price) {
-    chartData.push({
-      time: 'Live',
-      price: liveCoin.price,
+  if (liveSeries.length > 0) {
+    liveSeries.forEach((point) => {
+      chartData.push({
+        time: new Date(point.timestamp).toLocaleTimeString(),
+        price: point.priceBDT,
+      });
     });
   }
 
@@ -85,9 +88,9 @@ export function CoinPage() {
           <div className="text-right">
             <p className="text-sm text-gray-500 mb-1">Current Price</p>
             <p className="text-4xl font-extrabold text-gray-900 flex items-center justify-end">
-              ${liveCoin?.price?.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 6 }) || '0.00'}
-              {liveCoin?.direction === 'up' && <span className="text-green-500 text-2xl ml-2">↑</span>}
-              {liveCoin?.direction === 'down' && <span className="text-red-500 text-2xl ml-2">↓</span>}
+              ${liveCoin?.priceBDT?.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 6 }) || '0.00'}
+              {flashes[symbol] === 'up' && <span className="text-green-500 text-2xl ml-2">↑</span>}
+              {flashes[symbol] === 'down' && <span className="text-red-500 text-2xl ml-2">↓</span>}
             </p>
           </div>
         </div>
