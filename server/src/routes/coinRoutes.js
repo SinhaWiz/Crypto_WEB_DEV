@@ -1,11 +1,11 @@
 import express from 'express';
-import { getPrices, getHistory, refreshPrices, getCoin } from '../controllers/coinController.js';
+import { listCoins, getCoin, getHistory, refreshPrices } from '../controllers/coinController.js';
 
 const router = express.Router();
 
-router.get('/', getPrices);
+router.get('/', listCoins);
 router.post('/refresh', refreshPrices);
-router.get('/:symbol', getCoin);
 router.get('/:symbol/history', getHistory);
+router.get('/:symbol', getCoin);
 
 export default router;

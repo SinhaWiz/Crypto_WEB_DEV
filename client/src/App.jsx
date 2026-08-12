@@ -27,8 +27,22 @@ function App() {
               </ProtectedRoute>
             }
           />
-          <Route path="market" element={<MarketPage />} />
-          <Route path="market/:symbol" element={<CoinPage />} />
+          <Route
+            path="market"
+            element={
+              <ProtectedRoute>
+                <MarketPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="market/:symbol"
+            element={
+              <ProtectedRoute>
+                <CoinPage />
+              </ProtectedRoute>
+            }
+          />
           {/* Fallback route */}
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Route>

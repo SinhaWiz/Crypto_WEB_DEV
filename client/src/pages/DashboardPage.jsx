@@ -20,7 +20,7 @@ export function DashboardPage() {
           <div className="mt-2 flex-grow">
             <p className="text-sm text-gray-500">Available Balance</p>
             <p className="text-3xl font-bold text-purple-600 mt-1">
-              ৳{wallet?.balance?.toLocaleString() || '0'}
+              ৳{wallet?.cashBalanceBDT?.toLocaleString() || '0'}
             </p>
           </div>
           <div className="mt-4 pt-4 border-t border-gray-100">

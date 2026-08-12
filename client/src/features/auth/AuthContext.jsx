@@ -11,13 +11,14 @@ export function AuthProvider({ children }) {
 
   const fetchUserData = useCallback(async () => {
     try {
-      const [userRes, walletRes] = await Promise.all([
-        httpClient.get('/api/auth/me'),
-        httpClient.get('/api/wallet'),
-      ]);
+      const userRes = await httpClient.get('/api/auth/me');
       setUser(userRes.user);
-      setWallet(walletRes.wallet);
-      connectSocket();
+
+      if (userRes.user) {
+        const walletRes = await httpClient.get('/api/wallet');
+        setWallet(walletRes.wallet);
+        connectSocket();
+      }
     } catch (err) {
       setUser(null);
       setWallet(null);
@@ -34,24 +35,29 @@ export function AuthProvider({ children }) {
   const login = async (credentials) => {
     const res = await httpClient.post('/api/auth/login', credentials);
     setUser(res.user);
-    await fetchUserData(); // Fetch wallet after login
+    setWallet(res.wallet);
+    connectSocket();
     return res;
   };
 
   const register = async (data) => {
     const res = await httpClient.post('/api/auth/register', data);
     setUser(res.user);
-    await fetchUserData();
+    setWallet(res.wallet);
+    connectSocket();
     return res;
   };
 
   const logout = async () => {
-    // Optionally call a logout endpoint if it existed, otherwise just clear state 
-    // (JWT cookie clearing usually handled by server, but we can't easily clear httpOnly cookie from client)
-    // For now we'll just reset state. If we add /api/auth/logout later we call it here.
-    setUser(null);
-    setWallet(null);
-    disconnectSocket();
+    try {
+      await httpClient.post('/api/auth/logout');
+    } catch {
+      // Even if the request fails, clear local state
+    } finally {
+      setUser(null);
+      setWallet(null);
+      disconnectSocket();
+    }
   };
 
   return (

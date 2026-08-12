@@ -31,9 +31,11 @@ export function HomePage() {
                 Start Trading for Free
               </Link>
             )}
-            <Link to="/market" className="text-sm font-semibold leading-6 text-gray-900 hover:text-purple-600">
-              View Live Markets <span aria-hidden="true">→</span>
-            </Link>
+            {user && (
+              <Link to="/market" className="text-sm font-semibold leading-6 text-gray-900 hover:text-purple-600">
+                View Live Markets <span aria-hidden="true">→</span>
+              </Link>
+            )}
           </div>
         </div>
       </div>

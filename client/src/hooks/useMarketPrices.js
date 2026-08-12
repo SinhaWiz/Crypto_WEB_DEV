@@ -1,6 +1,17 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { socket } from '../services/socketClient';
 
+/**
+ * useMarketPrices
+ *
+ * Subscribes to live simulated price ticks via WebSocket and maintains
+ * an up-to-date price state for the given coins.
+ *
+ * @param {Array<string | { symbol: string, priceBDT?: number, ... }>} initialCoins
+ *   - Pass SUPPORTED_SYMBOLS (string array) from the market page,
+ *     or an array of coin objects with initial DB prices for the detail page.
+ * @returns {{ prices, flashes, connectionState, series }}
+ */
 export function useMarketPrices(initialCoins = []) {
   const [prices, setPrices] = useState({});
   const [series, setSeries] = useState({});
@@ -8,30 +19,38 @@ export function useMarketPrices(initialCoins = []) {
   const [connectionState, setConnectionState] = useState('connecting');
   const previousPricesRef = useRef({});
 
+  // Seed state from initial coin data (e.g. fetched from REST before socket connects)
   useEffect(() => {
+    if (initialCoins.length === 0) return;
+
     setPrices((current) => {
       const next = { ...current };
       initialCoins.forEach((coin) => {
         const sym = typeof coin === 'string' ? coin : coin.symbol;
-        if (!next[sym]) {
+        if (!next[sym] && typeof coin !== 'string') {
           next[sym] = {
             symbol: sym,
-            priceBDT: coin.priceBDT ?? coin.price ?? coin.close,
-            timestamp: coin.timestamp,
-            percentChange24h: coin.percentChange24h ?? coin.changePercent24h,
-            volume24h: coin.volume24h ?? coin.volume,
-            marketCap: coin.marketCap,
+            priceBDT: coin.priceBDT,
+            percentChange24h: coin.percentChange24h ?? null,
+            volume24h: coin.volume24h ?? null,
+            marketCap: coin.marketCap ?? null,
+            timestamp: coin.timestamp ?? null,
           };
         }
       });
       previousPricesRef.current = next;
       return next;
     });
-  }, [initialCoins.join(',')]); // We join by comma to mimic the original backup while keeping hook deps happy
+  }, [initialCoins.map((c) => (typeof c === 'string' ? c : c.symbol)).join(',')]); // eslint-disable-line
 
+  // Socket connection + event handlers
   useEffect(() => {
     if (!socket) return;
 
+    /**
+     * Process an incoming array of price objects and update state.
+     * Handles both market:prices (full snapshot) and market:tick (incremental).
+     */
     function mergeIncoming(incomingPrices = []) {
       const now = Date.now();
 
@@ -41,113 +60,96 @@ export function useMarketPrices(initialCoins = []) {
 
         incomingPrices.forEach((price) => {
           const previousPrice = previousPricesRef.current[price.symbol]?.priceBDT;
-          const normalizedPriceBDT = price.priceBDT ?? price.price ?? price.close;
-          const normalizedVolume = price.volume24h ?? price.volume;
-          
+
           next[price.symbol] = {
             ...current[price.symbol],
-            ...price,
-            priceBDT: normalizedPriceBDT,
-            volume24h: normalizedVolume,
-            percentChange24h: price.percentChange24h ?? price.changePercent24h ?? current[price.symbol]?.percentChange24h,
+            symbol: price.symbol,
+            priceBDT: price.priceBDT,
+            percentChange24h: price.percentChange24h ?? current[price.symbol]?.percentChange24h ?? null,
+            volume24h: price.volume24h ?? current[price.symbol]?.volume24h ?? null,
+            marketCap: price.marketCap ?? current[price.symbol]?.marketCap ?? null,
+            timestamp: price.timestamp ?? now,
           };
 
-          if (previousPrice && previousPrice !== normalizedPriceBDT) {
-            nextFlashes[price.symbol] = normalizedPriceBDT > previousPrice ? 'up' : 'down';
+          if (previousPrice !== undefined && previousPrice !== price.priceBDT) {
+            nextFlashes[price.symbol] = price.priceBDT > previousPrice ? 'up' : 'down';
           }
         });
 
         if (Object.keys(nextFlashes).length > 0) {
-          setFlashes((currentFlashes) => ({ ...currentFlashes, ...nextFlashes }));
+          setFlashes((f) => ({ ...f, ...nextFlashes }));
         }
 
         previousPricesRef.current = next;
         return next;
       });
 
+      // Append points to the live series (capped at 120 points per coin)
       setSeries((current) => {
         const next = { ...current };
-
         incomingPrices.forEach((price) => {
-          const point = {
-            symbol: price.symbol,
-            priceBDT: price.priceBDT ?? price.price ?? price.close,
-            timestamp: price.timestamp ?? now,
-          };
+          const point = { symbol: price.symbol, priceBDT: price.priceBDT, timestamp: price.timestamp ?? now };
           next[price.symbol] = [...(current[price.symbol] ?? []), point].slice(-120);
         });
-
         return next;
       });
     }
 
+    /**
+     * Normalize the server payload — server sends { prices: [...] }.
+     */
+    function handlePayload(payload) {
+      if (Array.isArray(payload)) {
+        mergeIncoming(payload);
+      } else if (payload?.prices) {
+        mergeIncoming(payload.prices);
+      }
+    }
+
     function handleConnect() {
       setConnectionState('connected');
-      // In my implementation, market:subscribe takes a symbol. In the backup it takes nothing and returns all active ones. 
-      // I will emit for all initialCoins individually if needed, or let the server handle it.
-      initialCoins.forEach((coin) => {
-        socket.emit('market:subscribe', typeof coin === 'string' ? coin : coin.symbol);
-      });
+      // Subscribe once — server sends all 6 coins in one batch
+      socket.emit('market:subscribe');
     }
 
     function handleDisconnect() {
       setConnectionState('disconnected');
     }
 
-    // In my server, market:prices returns an array directly, but backup expected { prices: [...] }. I'll handle both.
-    function handlePrices(payload) {
-      if (Array.isArray(payload)) {
-        mergeIncoming(payload);
-      } else if (payload && payload.prices) {
-        mergeIncoming(payload.prices);
-      } else if (payload && payload.tick) {
-        // Handle single tick from current server implementation
-        mergeIncoming([payload.tick]);
-      } else if (payload && payload.priceBDT) {
-         mergeIncoming([payload]);
-      }
-    }
-
     socket.on('connect', handleConnect);
     socket.on('disconnect', handleDisconnect);
-    socket.on('market:prices', handlePrices);
-    socket.on('market:tick', handlePrices);
+    socket.on('market:prices', handlePayload);
+    socket.on('market:tick', handlePayload);
 
-    if (!socket.connected) {
-      socket.connect();
-    } else {
+    if (socket.connected) {
       handleConnect();
+    } else {
+      socket.connect();
     }
 
     return () => {
-      initialCoins.forEach((coin) => {
-        socket.emit('market:unsubscribe', typeof coin === 'string' ? coin : coin.symbol);
-      });
+      socket.emit('market:unsubscribe');
       socket.off('connect', handleConnect);
       socket.off('disconnect', handleDisconnect);
-      socket.off('market:prices', handlePrices);
-      socket.off('market:tick', handlePrices);
+      socket.off('market:prices', handlePayload);
+      socket.off('market:tick', handlePayload);
     };
-  }, [initialCoins.join(',')]);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Clear flash indicators after 700ms
   useEffect(() => {
-    if (Object.keys(flashes).length === 0) return undefined;
-
-    const timeoutId = window.setTimeout(() => {
-      setFlashes({});
-    }, 700);
-
-    return () => window.clearTimeout(timeoutId);
+    if (Object.keys(flashes).length === 0) return;
+    const id = window.setTimeout(() => setFlashes({}), 700);
+    return () => window.clearTimeout(id);
   }, [flashes]);
 
+  // Return prices in the original order of initialCoins
   const orderedPrices = useMemo(
     () =>
       initialCoins.map((coin) => {
         const sym = typeof coin === 'string' ? coin : coin.symbol;
-        return {
-          ...(typeof coin === 'string' ? { symbol: sym } : coin),
-          ...prices[sym],
-        };
+        const base = typeof coin === 'string' ? { symbol: sym } : coin;
+        return { ...base, ...prices[sym] };
       }),
     [initialCoins, prices]
   );

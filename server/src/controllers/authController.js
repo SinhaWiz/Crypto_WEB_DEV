@@ -6,6 +6,7 @@ import { AppError } from '../utils/AppError.js';
 import { AUTH_COOKIE_NAME, ERROR_CODES } from '../constants/index.js';
 import { env } from '../config/env.js';
 import { User } from '../models/User.js';
+import { Wallet } from '../models/Wallet.js';
 
 function requireFields(body, fields) {
   const missing = fields.filter((field) => !body?.[field]);
@@ -48,7 +49,10 @@ export async function login(req, res) {
 
   const user = await loginUser({ email, password });
   setAuthCookie(res, user);
-  res.json({ user: toPublicUser(user) });
+
+  // Return wallet alongside user so the client can set both without a second round-trip
+  const wallet = await Wallet.findOne({ userId: user._id });
+  res.json({ user: toPublicUser(user), wallet });
 }
 
 export function logout(req, res) {
