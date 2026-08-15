@@ -1,7 +1,9 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { getCoin, getCoinHistory } from '../services/coinsService';
+import { getPortfolio } from '../services/tradeService';
 import { useMarketPrices } from '../hooks/useMarketPrices';
+import { TradePanel } from '../components/TradePanel';
 import {
   LineChart,
   Line,
@@ -26,6 +28,23 @@ export function CoinPage() {
   const [candles, setCandles] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [holdingQuantity, setHoldingQuantity] = useState(0);
+
+  // Load the user's current holding quantity for this coin (for the sell tab)
+  const refreshHolding = useCallback(() => {
+    getPortfolio()
+      .then((data) => {
+        const holding = data.holdings.find((h) => h.symbol === normalizedSymbol);
+        setHoldingQuantity(holding?.quantity ?? 0);
+      })
+      .catch(() => {
+        // Non-critical — trade panel just falls back to 0 available holdings
+      });
+  }, [normalizedSymbol]);
+
+  useEffect(() => {
+    refreshHolding();
+  }, [refreshHolding]);
 
   // Load initial coin snapshot + historical candles from REST
   useEffect(() => {
@@ -107,7 +126,8 @@ export function CoinPage() {
         ← Back to Market
       </button>
 
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 lg:col-span-2">
         {/* Header */}
         <div className="flex justify-between items-start mb-6">
           <div className="flex items-center">
@@ -207,6 +227,14 @@ export function CoinPage() {
         <p className="text-xs text-gray-400 mt-2 text-center">
           Historical daily candles + live simulation ticks · All prices in virtual BDT
         </p>
+        </div>
+
+        <TradePanel
+          symbol={normalizedSymbol}
+          priceBDT={liveCoin?.priceBDT}
+          holdingQuantity={holdingQuantity}
+          onTradeComplete={refreshHolding}
+        />
       </div>
     </div>
   );
