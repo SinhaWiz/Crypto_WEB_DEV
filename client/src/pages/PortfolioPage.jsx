@@ -6,6 +6,23 @@ function formatBDT(value) {
   return `৳${value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 
+function formatSignedBDT(value) {
+  if (value === null || value === undefined || Number.isNaN(value)) return '—';
+  const sign = value > 0 ? '+' : '';
+  return `${sign}${formatBDT(value)}`;
+}
+
+function formatSignedPercent(value) {
+  if (value === null || value === undefined || Number.isNaN(value)) return '—';
+  const sign = value > 0 ? '+' : '';
+  return `${sign}${value.toFixed(2)}%`;
+}
+
+function pnlColorClass(value) {
+  if (value === null || value === undefined || value === 0) return 'text-gray-700';
+  return value > 0 ? 'text-green-600' : 'text-red-600';
+}
+
 export function PortfolioPage() {
   const [portfolio, setPortfolio] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -41,12 +58,36 @@ export function PortfolioPage() {
   }
 
   const holdings = portfolio?.holdings ?? [];
+  const totalValueBDT = portfolio?.totalValueBDT ?? 0;
+  const totalCostBDT = portfolio?.totalCostBDT ?? 0;
+  const totalUnrealizedPnlBDT = portfolio?.totalUnrealizedPnlBDT ?? 0;
+  const totalUnrealizedPnlPercent = totalCostBDT > 0 ? (totalUnrealizedPnlBDT / totalCostBDT) * 100 : 0;
 
   return (
     <div className="space-y-6">
       <div>
         <h2 className="text-2xl font-bold text-gray-900">Portfolio</h2>
         <p className="text-gray-500 text-sm mt-1">Your holdings, valued at live simulated prices.</p>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="bg-white shadow-sm border border-gray-100 rounded-xl p-5">
+          <p className="text-xs text-gray-500 uppercase tracking-wide">Market Value</p>
+          <p className="text-2xl font-bold text-gray-900 mt-1">{formatBDT(totalValueBDT)}</p>
+        </div>
+        <div className="bg-white shadow-sm border border-gray-100 rounded-xl p-5">
+          <p className="text-xs text-gray-500 uppercase tracking-wide">Total Cost Basis</p>
+          <p className="text-2xl font-bold text-gray-900 mt-1">{formatBDT(totalCostBDT)}</p>
+        </div>
+        <div className="bg-white shadow-sm border border-gray-100 rounded-xl p-5">
+          <p className="text-xs text-gray-500 uppercase tracking-wide">Unrealized P/L</p>
+          <p className={`text-2xl font-bold mt-1 ${pnlColorClass(totalUnrealizedPnlBDT)}`}>
+            {formatSignedBDT(totalUnrealizedPnlBDT)}
+          </p>
+          <p className={`text-xs mt-0.5 ${pnlColorClass(totalUnrealizedPnlBDT)}`}>
+            {formatSignedPercent(totalUnrealizedPnlPercent)}
+          </p>
+        </div>
       </div>
 
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
@@ -64,6 +105,8 @@ export function PortfolioPage() {
                   <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Avg Buy Price</th>
                   <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Current Price</th>
                   <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Market Value</th>
+                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Unrealized P/L</th>
+                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Realized P/L</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
@@ -74,6 +117,13 @@ export function PortfolioPage() {
                     <td className="px-6 py-4 whitespace-nowrap text-right text-gray-700">{formatBDT(holding.averageBuyPriceBDT)}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-gray-700">{formatBDT(holding.currentPriceBDT)}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-right font-medium text-gray-900">{formatBDT(holding.marketValueBDT)}</td>
+                    <td className={`px-6 py-4 whitespace-nowrap text-right font-medium ${pnlColorClass(holding.unrealizedPnlBDT)}`}>
+                      {formatSignedBDT(holding.unrealizedPnlBDT)}
+                      <span className="block text-xs font-normal">{formatSignedPercent(holding.unrealizedPnlPercent)}</span>
+                    </td>
+                    <td className={`px-6 py-4 whitespace-nowrap text-right font-medium ${pnlColorClass(holding.realizedPnlBDT)}`}>
+                      {formatSignedBDT(holding.realizedPnlBDT)}
+                    </td>
                   </tr>
                 ))}
               </tbody>
