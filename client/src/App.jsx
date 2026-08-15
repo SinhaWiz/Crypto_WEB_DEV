@@ -8,6 +8,7 @@ import { DashboardPage } from './pages/DashboardPage';
 import { MarketPage } from './pages/MarketPage';
 import { CoinPage } from './pages/CoinPage';
 import { HomePage } from './pages/HomePage';
+import { PortfolioPage } from './pages/PortfolioPage';
 // Remove default Vite styles as we are using Tailwind
 // import './App.css';
 
@@ -40,6 +41,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <CoinPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="portfolio"
+            element={
+              <ProtectedRoute>
+                <PortfolioPage />
               </ProtectedRoute>
             }
           />

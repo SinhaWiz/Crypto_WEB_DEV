@@ -22,6 +22,7 @@ export function RootLayout() {
                 <div className="ml-10 flex space-x-4">
                   <Link to="/dashboard" className="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium transition-colors mr-4">Dashboard</Link>
                   <Link to="/market" className="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium transition-colors">Market</Link>
+                  <Link to="/portfolio" className="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium transition-colors">Portfolio</Link>
                 </div>
               )}
             </div>
