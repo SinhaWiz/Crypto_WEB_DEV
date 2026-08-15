@@ -96,3 +96,64 @@ export async function executeBuy({ userId, symbol, quantity }) {
     await mongoSession.endSession();
   }
 }
+
+/**
+ * Execute a market sell: atomically credits wallet cash, reduces the
+ * user's holding, and books realized P/L against the average-cost basis.
+ *
+ * Requires MongoDB running as a replica set (transactions are not
+ * supported on a standalone mongod).
+ */
+export async function executeSell({ userId, symbol, quantity }) {
+  assertValidSymbol(symbol);
+  assertValidQuantity(quantity);
+
+  const { priceBDT } = await resolveExecutionPrice(userId, symbol);
+  const proceedsBDT = priceBDT * quantity;
+
+  const mongoSession = await mongoose.startSession();
+  try {
+    let result;
+    await mongoSession.withTransaction(async () => {
+      const holding = await PortfolioHolding.findOne({ userId, symbol }).session(mongoSession);
+      if (!holding || holding.quantity < quantity) {
+        throw new AppError('Insufficient holdings for this trade', 400, ERROR_CODES.VALIDATION_ERROR);
+      }
+
+      const realizedPnlBDT = (priceBDT - holding.averageBuyPriceBDT) * quantity;
+      holding.quantity -= quantity;
+      holding.realizedPnlBDT += realizedPnlBDT;
+      if (holding.quantity === 0) {
+        holding.averageBuyPriceBDT = 0;
+      }
+      await holding.save({ session: mongoSession });
+
+      const wallet = await Wallet.findOne({ userId }).session(mongoSession);
+      if (!wallet) {
+        throw new AppError('Wallet not found', 404, ERROR_CODES.NOT_FOUND);
+      }
+      wallet.cashBalanceBDT += proceedsBDT;
+      await wallet.save({ session: mongoSession });
+
+      const [transaction] = await Transaction.create(
+        [
+          {
+            userId,
+            symbol,
+            side: 'sell',
+            quantity,
+            executionPriceBDT: priceBDT,
+            feeBDT: 0,
+          },
+        ],
+        { session: mongoSession }
+      );
+
+      result = { wallet, holding, transaction };
+    });
+
+    return result;
+  } finally {
+    await mongoSession.endSession();
+  }
+}
