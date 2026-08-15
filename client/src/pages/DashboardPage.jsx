@@ -1,8 +1,28 @@
+import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../features/auth/AuthContext';
 import { STARTING_BALANCE_BDT } from '../lib/constants';
+import { getPortfolio } from '../services/tradeService';
+
+function formatBDT(value) {
+  if (value === null || value === undefined || Number.isNaN(value)) return '—';
+  return `৳${value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+}
+
+function pnlColorClass(value) {
+  if (value === null || value === undefined || value === 0) return 'text-gray-900';
+  return value > 0 ? 'text-green-600' : 'text-red-600';
+}
 
 export function DashboardPage() {
   const { user, wallet } = useAuth();
+  const [portfolio, setPortfolio] = useState(null);
+
+  useEffect(() => {
+    getPortfolio()
+      .then(setPortfolio)
+      .catch(() => setPortfolio(null));
+  }, []);
 
   return (
     <div className="space-y-6">
@@ -30,11 +50,23 @@ export function DashboardPage() {
           </div>
         </div>
 
-        {/* Placeholder for future Portfolio summary */}
-        <div className="bg-white shadow rounded-lg p-6 flex flex-col opacity-75">
+        {/* Portfolio summary */}
+        <div className="bg-white shadow rounded-lg p-6 flex flex-col">
           <h3 className="text-lg font-medium text-gray-900 mb-2">Portfolio Overview</h3>
-          <div className="mt-2 flex-grow flex items-center justify-center bg-gray-50 rounded border border-dashed border-gray-300">
-            <p className="text-sm text-gray-500 italic">Trading features coming soon</p>
+          <div className="mt-2 flex-grow">
+            <p className="text-sm text-gray-500">Market Value</p>
+            <p className="text-3xl font-bold text-gray-900 mt-1">
+              {formatBDT(portfolio?.totalValueBDT ?? 0)}
+            </p>
+            <p className={`text-sm font-medium mt-1 ${pnlColorClass(portfolio?.totalUnrealizedPnlBDT)}`}>
+              {portfolio?.totalUnrealizedPnlBDT > 0 ? '+' : ''}
+              {formatBDT(portfolio?.totalUnrealizedPnlBDT ?? 0)} unrealized
+            </p>
+          </div>
+          <div className="mt-4 pt-4 border-t border-gray-100">
+            <Link to="/portfolio" className="text-xs text-purple-600 hover:underline">
+              View full portfolio →
+            </Link>
           </div>
         </div>
 
