@@ -1,4 +1,5 @@
 import { createPrediction } from '../services/predictionService.js';
+import { PredictionChallenge } from '../models/PredictionChallenge.js';
 import { AppError } from '../utils/AppError.js';
 import { ERROR_CODES } from '../constants/index.js';
 
@@ -27,4 +28,23 @@ export async function placePrediction(req, res) {
   });
 
   res.status(201).json({ prediction, wallet });
+}
+
+export async function getPredictionHistory(req, res) {
+  const page = Math.max(1, parseInt(req.query.page, 10) || 1);
+  const limit = Math.min(100, Math.max(1, parseInt(req.query.limit, 10) || 20));
+  const skip = (page - 1) * limit;
+
+  const [predictions, total] = await Promise.all([
+    PredictionChallenge.find({ userId: req.user.id }).sort({ createdAt: -1 }).skip(skip).limit(limit),
+    PredictionChallenge.countDocuments({ userId: req.user.id }),
+  ]);
+
+  res.json({
+    predictions,
+    page,
+    limit,
+    total,
+    totalPages: Math.max(1, Math.ceil(total / limit)),
+  });
 }
