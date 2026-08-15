@@ -1,8 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useAuth } from '../features/auth/AuthContext';
 import { SUPPORTED_SYMBOLS } from '../lib/constants';
 import { getCoin } from '../services/coinsService';
-import { placePrediction } from '../services/predictionService';
+import { placePrediction, getPredictionHistory } from '../services/predictionService';
 
 const DURATION_PRESETS = [
   { label: '5 min', minutes: 5 },
@@ -16,6 +16,22 @@ function formatBDT(value) {
   return `৳${value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 
+function formatDate(value) {
+  if (!value) return '—';
+  return new Date(value).toLocaleString([], {
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+}
+
+function resultBadgeClass(result) {
+  if (result === 'win') return 'bg-green-100 text-green-800';
+  if (result === 'loss') return 'bg-red-100 text-red-800';
+  return 'bg-yellow-100 text-yellow-800';
+}
+
 export function PredictionsPage() {
   const { wallet, refreshWallet } = useAuth();
   const [symbol, setSymbol] = useState(SUPPORTED_SYMBOLS[0]);
@@ -26,6 +42,22 @@ export function PredictionsPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState(null);
   const [successMessage, setSuccessMessage] = useState(null);
+
+  const [historyPage, setHistoryPage] = useState(null);
+  const [historyPageNumber, setHistoryPageNumber] = useState(1);
+  const [isLoadingHistory, setIsLoadingHistory] = useState(true);
+
+  const loadHistory = useCallback(() => {
+    setIsLoadingHistory(true);
+    getPredictionHistory({ page: historyPageNumber, limit: 10 })
+      .then(setHistoryPage)
+      .catch(() => setHistoryPage(null))
+      .finally(() => setIsLoadingHistory(false));
+  }, [historyPageNumber]);
+
+  useEffect(() => {
+    loadHistory();
+  }, [loadHistory]);
 
   useEffect(() => {
     let cancelled = false;
@@ -62,6 +94,7 @@ export function PredictionsPage() {
       );
       setPointsStaked('');
       await refreshWallet();
+      loadHistory();
     } catch (err) {
       setError(err?.message || 'Could not place prediction. Please try again.');
     } finally {
@@ -185,6 +218,79 @@ export function PredictionsPage() {
             <li>Win: get double your stake back. Lose: forfeit the stake.</li>
           </ul>
         </div>
+      </div>
+
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+        <div className="px-6 py-4 border-b border-gray-100">
+          <h3 className="text-sm font-semibold text-gray-900">Your Predictions</h3>
+        </div>
+
+        {isLoadingHistory ? (
+          <div className="p-10 text-center text-gray-400 text-sm">Loading predictions…</div>
+        ) : !historyPage || historyPage.predictions.length === 0 ? (
+          <div className="p-10 text-center text-gray-500 text-sm">No predictions yet.</div>
+        ) : (
+          <>
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-100">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Coin</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Direction</th>
+                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Staked</th>
+                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Start Price</th>
+                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">End Price</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Closes</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Result</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {historyPage.predictions.map((prediction) => (
+                    <tr key={prediction._id}>
+                      <td className="px-6 py-4 whitespace-nowrap font-medium text-gray-900">{prediction.symbol}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-gray-700">
+                        {prediction.direction === 'up' ? '↑ Up' : '↓ Down'}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-right text-gray-700">{prediction.pointsStaked}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-right text-gray-700">{formatBDT(prediction.startPriceBDT)}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-right text-gray-700">{formatBDT(prediction.endPriceBDT)}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-gray-500 text-sm">{formatDate(prediction.closesAt)}</td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className={`px-2 py-0.5 rounded text-xs font-semibold ${resultBadgeClass(prediction.result)}`}>
+                          {prediction.result.toUpperCase()}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            <div className="flex items-center justify-between px-6 py-3 border-t border-gray-100 text-sm">
+              <span className="text-gray-500">
+                Page {historyPage.page} of {historyPage.totalPages}
+              </span>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setHistoryPageNumber((p) => Math.max(1, p - 1))}
+                  disabled={historyPage.page <= 1}
+                  className="px-3 py-1.5 rounded-md border border-gray-200 text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Previous
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setHistoryPageNumber((p) => Math.min(historyPage.totalPages, p + 1))}
+                  disabled={historyPage.page >= historyPage.totalPages}
+                  className="px-3 py-1.5 rounded-md border border-gray-200 text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Next
+                </button>
+              </div>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );
