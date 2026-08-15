@@ -9,6 +9,10 @@ import { MarketPage } from './pages/MarketPage';
 import { CoinPage } from './pages/CoinPage';
 import { HomePage } from './pages/HomePage';
 import { PortfolioPage } from './pages/PortfolioPage';
+import { PredictionsPage } from './pages/PredictionsPage';
+import { LeaderboardPage } from './pages/LeaderboardPage';
+import { AchievementsPage } from './pages/AchievementsPage';
+import { LearningPage } from './pages/LearningPage';
 // Remove default Vite styles as we are using Tailwind
 // import './App.css';
 
@@ -49,6 +53,38 @@ function App() {
             element={
               <ProtectedRoute>
                 <PortfolioPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="predictions"
+            element={
+              <ProtectedRoute>
+                <PredictionsPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="leaderboard"
+            element={
+              <ProtectedRoute>
+                <LeaderboardPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="achievements"
+            element={
+              <ProtectedRoute>
+                <AchievementsPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="learning"
+            element={
+              <ProtectedRoute>
+                <LearningPage />
               </ProtectedRoute>
             }
           />

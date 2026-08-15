@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../features/auth/AuthContext';
 import { STARTING_BALANCE_BDT } from '../lib/constants';
 import { getPortfolio } from '../services/tradeService';
+import { getAchievements } from '../services/achievementService';
 
 function formatBDT(value) {
   if (value === null || value === undefined || Number.isNaN(value)) return '—';
@@ -17,12 +18,18 @@ function pnlColorClass(value) {
 export function DashboardPage() {
   const { user, wallet } = useAuth();
   const [portfolio, setPortfolio] = useState(null);
+  const [achievements, setAchievements] = useState([]);
 
   useEffect(() => {
     getPortfolio()
       .then(setPortfolio)
       .catch(() => setPortfolio(null));
+    getAchievements()
+      .then(setAchievements)
+      .catch(() => setAchievements([]));
   }, []);
+
+  const unlockedCount = achievements.filter((a) => a.unlocked).length;
 
   return (
     <div className="space-y-6">
@@ -70,11 +77,28 @@ export function DashboardPage() {
           </div>
         </div>
 
-        {/* Placeholder for future Gamification/Stats */}
-        <div className="bg-white shadow rounded-lg p-6 flex flex-col opacity-75">
+        {/* Gamification stats */}
+        <div className="bg-white shadow rounded-lg p-6 flex flex-col">
           <h3 className="text-lg font-medium text-gray-900 mb-2">Your Stats</h3>
-          <div className="mt-2 flex-grow flex items-center justify-center bg-gray-50 rounded border border-dashed border-gray-300">
-            <p className="text-sm text-gray-500 italic">Predictions & Leaderboards coming soon</p>
+          <div className="mt-2 flex-grow grid grid-cols-2 gap-4">
+            <div>
+              <p className="text-sm text-gray-500">Virtual Points</p>
+              <p className="text-3xl font-bold text-purple-600 mt-1">{wallet?.virtualPoints ?? 0}</p>
+            </div>
+            <div>
+              <p className="text-sm text-gray-500">Achievements</p>
+              <p className="text-3xl font-bold text-gray-900 mt-1">
+                {unlockedCount}/{achievements.length || '—'}
+              </p>
+            </div>
+          </div>
+          <div className="mt-4 pt-4 border-t border-gray-100 flex gap-4">
+            <Link to="/predictions" className="text-xs text-purple-600 hover:underline">
+              Make a prediction →
+            </Link>
+            <Link to="/achievements" className="text-xs text-purple-600 hover:underline">
+              View achievements →
+            </Link>
           </div>
         </div>
       </div>
