@@ -78,6 +78,9 @@ export function PortfolioPage() {
     return (
       <div className="bg-red-50 p-4 rounded-md">
         <p className="text-red-700">{error}</p>
+        <button onClick={loadPortfolio} className="mt-4 text-purple-600 hover:underline text-sm">
+          Try again
+        </button>
       </div>
     );
   }
