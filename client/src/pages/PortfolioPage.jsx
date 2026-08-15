@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { getPortfolio } from '../services/tradeService';
+import { getPortfolio, getTransactions } from '../services/tradeService';
 
 const ALLOCATION_COLORS = ['#8b5cf6', '#22c55e', '#f59e0b', '#ef4444', '#3b82f6', '#ec4899'];
 
@@ -26,10 +26,24 @@ function pnlColorClass(value) {
   return value > 0 ? 'text-green-600' : 'text-red-600';
 }
 
+function formatDate(value) {
+  if (!value) return '—';
+  return new Date(value).toLocaleString([], {
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+}
+
 export function PortfolioPage() {
   const [portfolio, setPortfolio] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  const [transactionsPage, setTransactionsPage] = useState(null);
+  const [transactionsPageNumber, setTransactionsPageNumber] = useState(1);
+  const [isLoadingTransactions, setIsLoadingTransactions] = useState(true);
 
   const loadPortfolio = useCallback(() => {
     setIsLoading(true);
@@ -43,6 +57,14 @@ export function PortfolioPage() {
   useEffect(() => {
     loadPortfolio();
   }, [loadPortfolio]);
+
+  useEffect(() => {
+    setIsLoadingTransactions(true);
+    getTransactions({ page: transactionsPageNumber, limit: 10 })
+      .then(setTransactionsPage)
+      .catch(() => setTransactionsPage(null))
+      .finally(() => setIsLoadingTransactions(false));
+  }, [transactionsPageNumber]);
 
   if (isLoading) {
     return (
@@ -161,6 +183,81 @@ export function PortfolioPage() {
           </div>
         </>
       )}
+      </div>
+
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+        <div className="px-6 py-4 border-b border-gray-100">
+          <h3 className="text-sm font-semibold text-gray-900">Transaction History</h3>
+        </div>
+
+        {isLoadingTransactions ? (
+          <div className="p-10 text-center text-gray-400 text-sm">Loading transactions…</div>
+        ) : !transactionsPage || transactionsPage.transactions.length === 0 ? (
+          <div className="p-10 text-center text-gray-500 text-sm">No transactions yet.</div>
+        ) : (
+          <>
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-100">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Coin</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Side</th>
+                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Quantity</th>
+                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Execution Price</th>
+                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Total</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {transactionsPage.transactions.map((tx) => (
+                    <tr key={tx._id}>
+                      <td className="px-6 py-4 whitespace-nowrap text-gray-500 text-sm">{formatDate(tx.createdAt)}</td>
+                      <td className="px-6 py-4 whitespace-nowrap font-medium text-gray-900">{tx.symbol}</td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span
+                          className={`px-2 py-0.5 rounded text-xs font-semibold ${
+                            tx.side === 'buy' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                          }`}
+                        >
+                          {tx.side.toUpperCase()}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-right text-gray-700">{tx.quantity}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-right text-gray-700">{formatBDT(tx.executionPriceBDT)}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-right font-medium text-gray-900">
+                        {formatBDT(tx.executionPriceBDT * tx.quantity)}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            <div className="flex items-center justify-between px-6 py-3 border-t border-gray-100 text-sm">
+              <span className="text-gray-500">
+                Page {transactionsPage.page} of {transactionsPage.totalPages}
+              </span>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setTransactionsPageNumber((p) => Math.max(1, p - 1))}
+                  disabled={transactionsPage.page <= 1}
+                  className="px-3 py-1.5 rounded-md border border-gray-200 text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Previous
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setTransactionsPageNumber((p) => Math.min(transactionsPage.totalPages, p + 1))}
+                  disabled={transactionsPage.page >= transactionsPage.totalPages}
+                  className="px-3 py-1.5 rounded-md border border-gray-200 text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Next
+                </button>
+              </div>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );
