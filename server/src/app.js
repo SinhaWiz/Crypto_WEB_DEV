@@ -13,6 +13,7 @@ import coinRoutes from './routes/coinRoutes.js';
 import tradeRoutes from './routes/tradeRoutes.js';
 import portfolioRoutes from './routes/portfolioRoutes.js';
 import transactionRoutes from './routes/transactionRoutes.js';
+import predictionRoutes from './routes/predictionRoutes.js';
 
 export function createApp() {
   const app = express();
@@ -40,6 +41,7 @@ export function createApp() {
   app.use('/api/trades', tradeRoutes);
   app.use('/api/portfolio', portfolioRoutes);
   app.use('/api/transactions', transactionRoutes);
+  app.use('/api/predictions', predictionRoutes);
 
   app.use((req, res) => {
     res.status(404).json({

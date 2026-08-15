@@ -1,5 +1,5 @@
 import mongoose from 'mongoose';
-import { STARTING_BALANCE_BDT } from '../constants/index.js';
+import { STARTING_BALANCE_BDT, STARTING_VIRTUAL_POINTS } from '../constants/index.js';
 
 const { Schema, model } = mongoose;
 
@@ -20,7 +20,7 @@ const walletSchema = new Schema(
     virtualPoints: {
       type: Number,
       required: true,
-      default: 0,
+      default: STARTING_VIRTUAL_POINTS,
       min: 0,
     },
     portfolioValueBDT: {
