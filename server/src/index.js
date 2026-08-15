@@ -5,6 +5,7 @@ import { connectDB } from './config/db.js';
 import { createApp } from './app.js';
 import { startHistoricalRefreshJob } from './jobs/historicalRefreshJob.js';
 import { startSimulationTickJob } from './jobs/simulationTickJob.js';
+import { startPredictionSettlementJob } from './jobs/predictionSettlementJob.js';
 import { registerMarketSocketHandlers } from './socket/marketSocket.js';
 
 async function start() {
@@ -21,6 +22,7 @@ async function start() {
 
   // Start background jobs (pass io to the tick job for emissions)
   startSimulationTickJob(io);
+  startPredictionSettlementJob();
 
   httpServer.listen(env.PORT, () => {
     console.log(`Server listening on port ${env.PORT}`);
