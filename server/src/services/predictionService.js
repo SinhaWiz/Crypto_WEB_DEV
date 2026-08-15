@@ -3,6 +3,7 @@ import { PredictionChallenge } from '../models/PredictionChallenge.js';
 import { Wallet } from '../models/Wallet.js';
 import { SimulationSession } from '../models/SimulationSession.js';
 import { getLatestSimulatedPrice, getAnchorPriceBDT } from './simulation/engine.js';
+import { evaluateAchievements } from './achievementService.js';
 import { AppError } from '../utils/AppError.js';
 import { ERROR_CODES, SUPPORTED_SYMBOLS } from '../constants/index.js';
 
@@ -61,7 +62,15 @@ async function resolveLivePriceBDT(userId, symbol) {
  * points from the wallet and records the challenge at the current
  * simulated price, to be resolved later by the settlement job.
  */
-export async function createPrediction({ userId, symbol, direction, pointsStaked, durationMinutes }) {
+export async function createPrediction(params) {
+  const result = await createPredictionTransaction(params);
+  await evaluateAchievements(params.userId).catch((err) =>
+    console.error('[achievements] evaluation failed:', err.message)
+  );
+  return result;
+}
+
+async function createPredictionTransaction({ userId, symbol, direction, pointsStaked, durationMinutes }) {
   assertValidSymbol(symbol);
   assertValidDirection(direction);
   assertValidPointsStaked(pointsStaked);

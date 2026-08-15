@@ -3,6 +3,7 @@ import { PredictionChallenge } from '../models/PredictionChallenge.js';
 import { Wallet } from '../models/Wallet.js';
 import { SimulationSession } from '../models/SimulationSession.js';
 import { getLatestSimulatedPrice, getAnchorPriceBDT } from '../services/simulation/engine.js';
+import { evaluateAchievements } from '../services/achievementService.js';
 
 // Winners get their staked points back plus an equal bonus; losers forfeit
 // the stake they already paid when the prediction was created.
@@ -54,6 +55,10 @@ export async function settleDuePredictions() {
         { $inc: { virtualPoints: prediction.pointsStaked * WIN_PAYOUT_MULTIPLIER } }
       );
     }
+
+    await evaluateAchievements(prediction.userId).catch((err) =>
+      console.error('[achievements] evaluation failed:', err.message)
+    );
   }
 
   console.log(`[JOB] predictionSettlementJob settled ${duePredictions.length} prediction(s)`);

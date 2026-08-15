@@ -4,6 +4,7 @@ import { PortfolioHolding } from '../models/PortfolioHolding.js';
 import { Transaction } from '../models/Transaction.js';
 import { SimulationSession } from '../models/SimulationSession.js';
 import { getLatestSimulatedPrice, getAnchorPriceBDT } from './simulation/engine.js';
+import { evaluateAchievements } from './achievementService.js';
 import { AppError } from '../utils/AppError.js';
 import { ERROR_CODES, SUPPORTED_SYMBOLS } from '../constants/index.js';
 
@@ -41,7 +42,15 @@ async function resolveExecutionPrice(userId, symbol) {
  * Requires MongoDB running as a replica set (transactions are not
  * supported on a standalone mongod).
  */
-export async function executeBuy({ userId, symbol, quantity }) {
+export async function executeBuy(params) {
+  const result = await executeBuyTransaction(params);
+  await evaluateAchievements(params.userId).catch((err) =>
+    console.error('[achievements] evaluation failed:', err.message)
+  );
+  return result;
+}
+
+async function executeBuyTransaction({ userId, symbol, quantity }) {
   assertValidSymbol(symbol);
   assertValidQuantity(quantity);
 
@@ -104,7 +113,15 @@ export async function executeBuy({ userId, symbol, quantity }) {
  * Requires MongoDB running as a replica set (transactions are not
  * supported on a standalone mongod).
  */
-export async function executeSell({ userId, symbol, quantity }) {
+export async function executeSell(params) {
+  const result = await executeSellTransaction(params);
+  await evaluateAchievements(params.userId).catch((err) =>
+    console.error('[achievements] evaluation failed:', err.message)
+  );
+  return result;
+}
+
+async function executeSellTransaction({ userId, symbol, quantity }) {
   assertValidSymbol(symbol);
   assertValidQuantity(quantity);
 
