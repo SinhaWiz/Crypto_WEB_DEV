@@ -1,5 +1,8 @@
 import { useEffect, useState, useCallback } from 'react';
+import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { getPortfolio } from '../services/tradeService';
+
+const ALLOCATION_COLORS = ['#8b5cf6', '#22c55e', '#f59e0b', '#ef4444', '#3b82f6', '#ec4899'];
 
 function formatBDT(value) {
   if (value === null || value === undefined || Number.isNaN(value)) return '—';
@@ -90,12 +93,38 @@ export function PortfolioPage() {
         </div>
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-        {holdings.length === 0 ? (
-          <div className="p-10 text-center text-gray-500 text-sm">
-            You don't hold any coins yet. Head to the market to place your first trade.
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+      {holdings.length === 0 ? (
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-10 text-center text-gray-500 text-sm lg:col-span-3">
+          You don't hold any coins yet. Head to the market to place your first trade.
+        </div>
+      ) : (
+        <>
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+            <h3 className="text-sm font-semibold text-gray-900 mb-4">Allocation</h3>
+            <div className="h-64">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={holdings}
+                    dataKey="marketValueBDT"
+                    nameKey="symbol"
+                    innerRadius={50}
+                    outerRadius={80}
+                    paddingAngle={2}
+                  >
+                    {holdings.map((holding, index) => (
+                      <Cell key={holding.symbol} fill={ALLOCATION_COLORS[index % ALLOCATION_COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip formatter={(value) => formatBDT(value)} />
+                  <Legend />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
           </div>
-        ) : (
+
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden lg:col-span-2">
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-100">
               <thead className="bg-gray-50">
@@ -129,7 +158,9 @@ export function PortfolioPage() {
               </tbody>
             </table>
           </div>
-        )}
+          </div>
+        </>
+      )}
       </div>
     </div>
   );
