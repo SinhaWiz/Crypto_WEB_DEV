@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { httpClient } from '../../services/httpClient';
-import { connectSocket, disconnectSocket } from '../../services/socketClient';
+import { socket, connectSocket, disconnectSocket } from '../../services/socketClient';
 
 const AuthContext = createContext(null);
 
@@ -30,6 +30,18 @@ export function AuthProvider({ children }) {
 
   useEffect(() => {
     fetchUserData();
+  }, [fetchUserData]);
+
+  useEffect(() => {
+    const handleWalletUpdate = () => {
+      fetchUserData();
+    };
+
+    socket.on('wallet:update', handleWalletUpdate);
+
+    return () => {
+      socket.off('wallet:update', handleWalletUpdate);
+    };
   }, [fetchUserData]);
 
   const login = async (credentials) => {
