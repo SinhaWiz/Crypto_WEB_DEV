@@ -39,6 +39,11 @@ const userSchema = new Schema(
       enum: ['active', 'suspended'],
       default: 'active',
     },
+    winningStreakCount: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
   },
   { timestamps: true }
 );
