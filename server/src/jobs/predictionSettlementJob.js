@@ -4,6 +4,7 @@ import { Wallet } from '../models/Wallet.js';
 import { SimulationSession } from '../models/SimulationSession.js';
 import { getLatestSimulatedPrice, getAnchorPriceBDT } from '../services/simulation/engine.js';
 import { evaluateAchievements } from '../services/achievementService.js';
+import { emitWalletUpdate } from '../socket/marketSocket.js';
 
 // Winners get their staked points back plus an equal bonus; losers forfeit
 // the stake they already paid when the prediction was created.
@@ -32,7 +33,7 @@ async function resolveLivePriceBDT(sessionCache, userId, symbol) {
  * price against the owning user's own simulated price path, record
  * win/loss, and credit winnings to the wallet.
  */
-export async function settleDuePredictions() {
+export async function settleDuePredictions(io = null) {
   const now = new Date();
   const duePredictions = await PredictionChallenge.find({ result: 'pending', closesAt: { $lte: now } });
   if (duePredictions.length === 0) return;
@@ -56,6 +57,8 @@ export async function settleDuePredictions() {
       );
     }
 
+    emitWalletUpdate(io, prediction.userId);
+
     await evaluateAchievements(prediction.userId).catch((err) =>
       console.error('[achievements] evaluation failed:', err.message)
     );
@@ -64,9 +67,9 @@ export async function settleDuePredictions() {
   console.log(`[JOB] predictionSettlementJob settled ${duePredictions.length} prediction(s)`);
 }
 
-export function startPredictionSettlementJob() {
+export function startPredictionSettlementJob(io = null) {
   cron.schedule('* * * * *', () => {
-    settleDuePredictions().catch((err) => {
+    settleDuePredictions(io).catch((err) => {
       console.error('[JOB] predictionSettlementJob error:', err.message);
     });
   });

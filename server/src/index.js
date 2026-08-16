@@ -22,7 +22,7 @@ async function start() {
 
   // Start background jobs (pass io to the tick job for emissions)
   startSimulationTickJob(io);
-  startPredictionSettlementJob();
+  startPredictionSettlementJob(io);
 
   httpServer.listen(env.PORT, () => {
     console.log(`Server listening on port ${env.PORT}`);
