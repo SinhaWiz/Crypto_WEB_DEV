@@ -2,6 +2,7 @@ import { Achievement } from '../models/Achievement.js';
 import { Transaction } from '../models/Transaction.js';
 import { PredictionChallenge } from '../models/PredictionChallenge.js';
 import { Wallet } from '../models/Wallet.js';
+import { User } from '../models/User.js';
 import { STARTING_BALANCE_BDT } from '../constants/index.js';
 
 export const ACHIEVEMENT_DEFINITIONS = [
@@ -42,6 +43,15 @@ export const ACHIEVEMENT_DEFINITIONS = [
     check: async (userId) => {
       const wallet = await Wallet.findOne({ userId });
       return (wallet?.cashBalanceBDT ?? 0) >= STARTING_BALANCE_BDT * 2;
+    },
+  },
+  {
+    code: 'WINNING_STREAK',
+    title: 'Winning Streak',
+    description: 'Make 5 consecutive profitable sell trades.',
+    check: async (userId) => {
+      const user = await User.findById(userId).select('winningStreakCount');
+      return (user?.winningStreakCount ?? 0) >= 5;
     },
   },
 ];
