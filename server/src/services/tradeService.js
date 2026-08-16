@@ -2,6 +2,7 @@ import mongoose from 'mongoose';
 import { Wallet } from '../models/Wallet.js';
 import { PortfolioHolding } from '../models/PortfolioHolding.js';
 import { Transaction } from '../models/Transaction.js';
+import { User } from '../models/User.js';
 import { SimulationSession } from '../models/SimulationSession.js';
 import { getLatestSimulatedPrice, getAnchorPriceBDT } from './simulation/engine.js';
 import { evaluateAchievements } from './achievementService.js';
@@ -151,6 +152,13 @@ async function executeSellTransaction({ userId, symbol, quantity }) {
       }
       wallet.cashBalanceBDT += proceedsBDT;
       await wallet.save({ session: mongoSession });
+
+      const user = await User.findById(userId).session(mongoSession);
+      if (!user) {
+        throw new AppError('User not found', 404, ERROR_CODES.NOT_FOUND);
+      }
+      user.winningStreakCount = realizedPnlBDT > 0 ? (user.winningStreakCount ?? 0) + 1 : 0;
+      await user.save({ session: mongoSession });
 
       const [transaction] = await Transaction.create(
         [
