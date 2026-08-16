@@ -3,6 +3,15 @@ import { useNavigate } from 'react-router-dom';
 import { listCoins } from '../services/coinsService';
 import { useMarketPrices } from '../hooks/useMarketPrices';
 
+const COIN_BADGES = {
+  BTC: { icon: '₿', className: 'bg-amber-100 text-amber-700' },
+  ETH: { icon: 'Ξ', className: 'bg-slate-100 text-slate-700' },
+  SOL: { icon: '◎', className: 'bg-violet-100 text-violet-700' },
+  DOGE: { icon: 'Ð', className: 'bg-yellow-100 text-yellow-700' },
+  XRP: { icon: '✕', className: 'bg-cyan-100 text-cyan-700' },
+  BNB: { icon: '⬢', className: 'bg-orange-100 text-orange-700' },
+};
+
 export function MarketPage() {
   const navigate = useNavigate();
   const [initialCoins, setInitialCoins] = useState([]);
@@ -66,8 +75,12 @@ export function MarketPage() {
             >
               <div className="flex justify-between items-start mb-4">
                 <div className="flex items-center">
-                  <div className="h-10 w-10 rounded-full bg-purple-100 flex items-center justify-center text-purple-700 font-bold text-lg">
-                    {coin.symbol[0]}
+                  <div
+                    className={`h-10 w-10 rounded-full flex items-center justify-center font-bold text-lg shadow-sm ${COIN_BADGES[coin.symbol]?.className ?? 'bg-purple-100 text-purple-700'}`}
+                    aria-hidden="true"
+                    title={`${coin.symbol} icon`}
+                  >
+                    {COIN_BADGES[coin.symbol]?.icon ?? coin.symbol[0]}
                   </div>
                   <div className="ml-3">
                     <h3 className="text-lg font-bold text-gray-900">{coin.symbol}</h3>
