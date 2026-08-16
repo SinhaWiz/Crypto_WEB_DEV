@@ -98,3 +98,15 @@ export function emitMarketTicks(io, userId, ticks) {
 
   io.to(userRoom(userId)).emit('market:tick', { prices });
 }
+
+/**
+ * Notify a specific user that their wallet has changed and the client should
+ * refresh cached balances/points from the API.
+ */
+export function emitWalletUpdate(io, userId) {
+  if (!io) return;
+
+  io.to(userRoom(userId)).emit('wallet:update', {
+    userId: userId.toString(),
+  });
+}
