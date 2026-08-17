@@ -6,6 +6,10 @@ export const STARTING_VIRTUAL_POINTS = 100;
 
 export const BDT_PER_USD = 120;
 
+export const TRADE_FEE_RATE = 0.008;
+
+export const POINTS_EXCHANGE_RATE_BDT = 1000;
+
 export const DISCLAIMER_TEXT =
   'Educational simulator only. All balances, trades, prices, and rewards are virtual; no real cryptocurrency or financial transaction occurs.';
 

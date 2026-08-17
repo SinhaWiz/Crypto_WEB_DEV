@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useAuth } from '../features/auth/AuthContext';
+import { TRADE_FEE_RATE } from '../lib/constants';
 import { buyCoin, sellCoin } from '../services/tradeService';
 
 function formatBDT(value) {
@@ -22,7 +23,10 @@ export function TradePanel({ symbol, priceBDT, holdingQuantity = 0, onTradeCompl
 
   const parsedQuantity = Number(quantity);
   const hasValidQuantity = quantity !== '' && Number.isFinite(parsedQuantity) && parsedQuantity > 0;
-  const estimatedTotalBDT = hasValidQuantity && priceBDT ? parsedQuantity * priceBDT : 0;
+  const estimatedSubtotalBDT = hasValidQuantity && priceBDT ? parsedQuantity * priceBDT : 0;
+  const estimatedFeeBDT = estimatedSubtotalBDT * TRADE_FEE_RATE;
+  const estimatedTotalBDT =
+    side === 'buy' ? estimatedSubtotalBDT + estimatedFeeBDT : estimatedSubtotalBDT - estimatedFeeBDT;
 
   const cashBalanceBDT = wallet?.cashBalanceBDT ?? 0;
   const insufficientBalance = side === 'buy' && hasValidQuantity && estimatedTotalBDT > cashBalanceBDT;
@@ -102,7 +106,17 @@ export function TradePanel({ symbol, priceBDT, holdingQuantity = 0, onTradeCompl
             <span className="text-gray-900 font-medium">{formatBDT(priceBDT)}</span>
           </div>
           <div className="flex justify-between text-gray-500">
-            <span>Estimated {side === 'buy' ? 'cost' : 'proceeds'}</span>
+            <span>Subtotal</span>
+            <span className="text-gray-900 font-medium">{formatBDT(estimatedSubtotalBDT)}</span>
+          </div>
+          <div className="flex justify-between text-gray-500">
+            <span>Platform fee ({(TRADE_FEE_RATE * 100).toFixed(1)}%)</span>
+            <span className="text-gray-900 font-medium">
+              {side === 'buy' ? '+' : '-'}{formatBDT(estimatedFeeBDT)}
+            </span>
+          </div>
+          <div className="flex justify-between text-gray-500">
+            <span>Estimated {side === 'buy' ? 'total cost' : 'net proceeds'}</span>
             <span className="text-gray-900 font-medium">{formatBDT(estimatedTotalBDT)}</span>
           </div>
           {side === 'buy' && (

@@ -208,30 +208,36 @@ export function PortfolioPage() {
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Side</th>
                     <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Quantity</th>
                     <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Execution Price</th>
+                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Fee</th>
                     <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Total</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
-                  {transactionsPage.transactions.map((tx) => (
-                    <tr key={tx._id}>
-                      <td className="px-6 py-4 whitespace-nowrap text-gray-500 text-sm">{formatDate(tx.createdAt)}</td>
-                      <td className="px-6 py-4 whitespace-nowrap font-medium text-gray-900">{tx.symbol}</td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span
-                          className={`px-2 py-0.5 rounded text-xs font-semibold ${
-                            tx.side === 'buy' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                          }`}
-                        >
-                          {tx.side.toUpperCase()}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right text-gray-700">{tx.quantity}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right text-gray-700">{formatBDT(tx.executionPriceBDT)}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right font-medium text-gray-900">
-                        {formatBDT(tx.executionPriceBDT * tx.quantity)}
-                      </td>
-                    </tr>
-                  ))}
+                  {transactionsPage.transactions.map((tx) => {
+                    const subtotalBDT = tx.executionPriceBDT * tx.quantity;
+                    const totalBDT = tx.side === 'buy' ? subtotalBDT + (tx.feeBDT ?? 0) : subtotalBDT - (tx.feeBDT ?? 0);
+                    return (
+                      <tr key={tx._id}>
+                        <td className="px-6 py-4 whitespace-nowrap text-gray-500 text-sm">{formatDate(tx.createdAt)}</td>
+                        <td className="px-6 py-4 whitespace-nowrap font-medium text-gray-900">{tx.symbol}</td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span
+                            className={`px-2 py-0.5 rounded text-xs font-semibold ${
+                              tx.side === 'buy' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                            }`}
+                          >
+                            {tx.side.toUpperCase()}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-right text-gray-700">{tx.quantity}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-right text-gray-700">{formatBDT(tx.executionPriceBDT)}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-right text-gray-700">{formatBDT(tx.feeBDT ?? 0)}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-right font-medium text-gray-900">
+                          {formatBDT(totalBDT)}
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>

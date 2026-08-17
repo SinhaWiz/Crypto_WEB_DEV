@@ -9,6 +9,7 @@ import { MarketPage } from './pages/MarketPage';
 import { CoinPage } from './pages/CoinPage';
 import { HomePage } from './pages/HomePage';
 import { PortfolioPage } from './pages/PortfolioPage';
+import { WalletPage } from './pages/WalletPage';
 import { PredictionsPage } from './pages/PredictionsPage';
 import { LeaderboardPage } from './pages/LeaderboardPage';
 import { AchievementsPage } from './pages/AchievementsPage';
@@ -53,6 +54,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <PortfolioPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="wallet"
+            element={
+              <ProtectedRoute>
+                <WalletPage />
               </ProtectedRoute>
             }
           />

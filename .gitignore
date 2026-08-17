@@ -15,5 +15,11 @@ docs/
 backup/
 context.md
 
+# Learning guides / agentic tooling (not part of the app)
+Learning Guide/
+.agents/
+AGENTS.md
+.claude/
+
 # Logs
 *.log

@@ -92,7 +92,10 @@ export function DashboardPage() {
               </p>
             </div>
           </div>
-          <div className="mt-4 pt-4 border-t border-gray-100 flex gap-4">
+          <div className="mt-4 pt-4 border-t border-gray-100 flex gap-4 flex-wrap">
+            <Link to="/wallet" className="text-xs text-purple-600 hover:underline">
+              Buy points →
+            </Link>
             <Link to="/predictions" className="text-xs text-purple-600 hover:underline">
               Make a prediction →
             </Link>
