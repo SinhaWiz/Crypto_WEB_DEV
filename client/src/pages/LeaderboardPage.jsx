@@ -13,16 +13,35 @@ function formatSignedPercent(value) {
   return `${sign}${value.toFixed(2)}%`;
 }
 
-function returnColorClass(value) {
-  if (value === null || value === undefined || value === 0) return 'text-gray-700';
-  return value > 0 ? 'text-green-600' : 'text-red-600';
+function returnColor(value) {
+  if (!value || value === 0) return 'var(--color-body)';
+  return value > 0 ? 'var(--color-up)' : 'var(--color-down)';
 }
 
-function rankBadge(rank) {
-  if (rank === 1) return '🥇';
-  if (rank === 2) return '🥈';
-  if (rank === 3) return '🥉';
-  return `#${rank}`;
+function RankDisplay({ rank }) {
+  if (rank === 1) return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+      <span style={{ fontSize: 22 }}>🥇</span>
+      <span style={{ fontWeight: 700, color: '#f0b90b', fontFamily: 'var(--font-mono)', fontSize: 15 }}>#1</span>
+    </div>
+  );
+  if (rank === 2) return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+      <span style={{ fontSize: 22 }}>🥈</span>
+      <span style={{ fontWeight: 700, color: '#929aa5', fontFamily: 'var(--font-mono)', fontSize: 15 }}>#2</span>
+    </div>
+  );
+  if (rank === 3) return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+      <span style={{ fontSize: 22 }}>🥉</span>
+      <span style={{ fontWeight: 700, color: '#cd7f32', fontFamily: 'var(--font-mono)', fontSize: 15 }}>#3</span>
+    </div>
+  );
+  return (
+    <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 500, color: 'var(--color-muted)', fontSize: 14 }}>
+      #{rank}
+    </span>
+  );
 }
 
 export function LeaderboardPage() {
@@ -40,70 +59,141 @@ export function LeaderboardPage() {
       .finally(() => setIsLoading(false));
   }, []);
 
-  useEffect(() => {
-    loadLeaderboard();
-  }, [loadLeaderboard]);
+  useEffect(() => { loadLeaderboard(); }, [loadLeaderboard]);
+
+  // Find user's entry
+  const myEntry = leaderboard.find((e) => e.userId === user?.id);
 
   if (isLoading) {
     return (
-      <div className="flex justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-purple-500"></div>
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: 280 }}>
+        <span className="spinner" />
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="bg-red-50 p-4 rounded-md">
-        <p className="text-red-700">{error}</p>
-        <button onClick={loadLeaderboard} className="mt-4 text-purple-600 hover:underline text-sm">
-          Try again
-        </button>
+      <div>
+        <div className="msg-error" style={{ marginBottom: 12 }}>{error}</div>
+        <button onClick={loadLeaderboard} className="btn btn-secondary btn-sm">Try again</button>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-bold text-gray-900">Leaderboard</h2>
-        <p className="text-gray-500 text-sm mt-1">
-          Ranked by portfolio return % — fair no matter which simulated price path you walked.
-        </p>
+    <div className="page-stack">
+      {/* Header */}
+      <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
+        <div>
+          <h1 className="page-title">Leaderboard</h1>
+          <p className="page-subtitle">Ranked by portfolio return % — fair across all simulated price paths.</p>
+        </div>
+        <button onClick={loadLeaderboard} className="btn btn-secondary btn-sm" id="leaderboard-refresh-btn">
+          ↻ Refresh
+        </button>
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+      {/* ─── My Rank Banner (if found) ─── */}
+      {myEntry && (
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            padding: '16px 20px',
+            backgroundColor: 'rgba(252,213,53,0.08)',
+            border: '1px solid rgba(252,213,53,0.3)',
+            borderRadius: 'var(--radius-xl)',
+            flexWrap: 'wrap',
+            gap: 12,
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <RankDisplay rank={myEntry.rank} />
+            <div>
+              <p style={{ fontWeight: 700, color: 'var(--color-ink)', fontSize: 15, margin: 0 }}>
+                {myEntry.name} <span style={{ color: 'var(--color-primary)', fontSize: 13 }}>(You)</span>
+              </p>
+              <p style={{ fontSize: 12, color: 'var(--color-muted)', margin: '2px 0 0' }}>
+                Account value: <span style={{ fontFamily: 'var(--font-mono)' }}>{formatBDT(myEntry.totalAccountValueBDT)}</span>
+              </p>
+            </div>
+          </div>
+          <p
+            style={{
+              fontFamily: 'var(--font-mono)',
+              fontSize: 24,
+              fontWeight: 700,
+              color: returnColor(myEntry.returnPercent),
+              margin: 0,
+            }}
+          >
+            {formatSignedPercent(myEntry.returnPercent)}
+          </p>
+        </div>
+      )}
+
+      {/* ─── Leaderboard Table ─── */}
+      <div className="card" style={{ overflow: 'hidden' }}>
         {leaderboard.length === 0 ? (
-          <div className="p-10 text-center text-gray-500 text-sm">No traders on the board yet.</div>
+          <div style={{ padding: 48, textAlign: 'center' }}>
+            <p style={{ fontSize: 32, marginBottom: 12 }}>🏁</p>
+            <p className="text-muted" style={{ fontSize: 15 }}>No traders on the board yet.</p>
+            <p className="text-muted" style={{ fontSize: 13, marginTop: 4 }}>Be the first to make a trade!</p>
+          </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-100">
-              <thead className="bg-gray-50">
+          <div style={{ overflowX: 'auto' }}>
+            <table className="cs-table">
+              <thead>
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Rank</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Trader</th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Account Value</th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Return</th>
+                  <th style={{ width: 80 }}>Rank</th>
+                  <th>Trader</th>
+                  <th className="text-right">Account Value</th>
+                  <th className="text-right">Return %</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
-                {leaderboard.map((entry) => (
-                  <tr key={entry.userId} className={entry.userId === user?.id ? 'bg-purple-50' : undefined}>
-                    <td className="px-6 py-4 whitespace-nowrap font-medium text-gray-900">{rankBadge(entry.rank)}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-gray-900">
-                      {entry.name}
-                      {entry.userId === user?.id && (
-                        <span className="ml-2 text-xs text-purple-600 font-semibold">(You)</span>
-                      )}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-gray-700">
-                      {formatBDT(entry.totalAccountValueBDT)}
-                    </td>
-                    <td className={`px-6 py-4 whitespace-nowrap text-right font-medium ${returnColorClass(entry.returnPercent)}`}>
-                      {formatSignedPercent(entry.returnPercent)}
-                    </td>
-                  </tr>
-                ))}
+              <tbody>
+                {leaderboard.map((entry) => {
+                  const isMe = entry.userId === user?.id;
+                  return (
+                    <tr
+                      key={entry.userId}
+                      id={`leaderboard-row-${entry.rank}`}
+                      className={isMe ? 'table-row-highlight' : ''}
+                    >
+                      <td>
+                        <RankDisplay rank={entry.rank} />
+                      </td>
+                      <td>
+                        <span style={{ fontWeight: isMe ? 700 : 500, color: 'var(--color-ink)', fontSize: 14 }}>
+                          {entry.name}
+                        </span>
+                        {isMe && (
+                          <span
+                            className="badge badge-yellow"
+                            style={{ marginLeft: 8, fontSize: 11 }}
+                          >
+                            You
+                          </span>
+                        )}
+                      </td>
+                      <td className="text-right num" style={{ color: 'var(--color-body)' }}>
+                        {formatBDT(entry.totalAccountValueBDT)}
+                      </td>
+                      <td
+                        className="text-right num"
+                        style={{
+                          color: returnColor(entry.returnPercent),
+                          fontWeight: 700,
+                          fontSize: 15,
+                        }}
+                      >
+                        {formatSignedPercent(entry.returnPercent)}
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>

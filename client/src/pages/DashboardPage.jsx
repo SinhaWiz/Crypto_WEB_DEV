@@ -10,10 +10,22 @@ function formatBDT(value) {
   return `৳${value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 
-function pnlColorClass(value) {
-  if (value === null || value === undefined || value === 0) return 'text-gray-900';
-  return value > 0 ? 'text-green-600' : 'text-red-600';
+function formatCompact(value) {
+  if (value === null || value === undefined || Number.isNaN(value)) return '—';
+  if (Math.abs(value) >= 1000) {
+    return `৳${(value / 1000).toFixed(1)}k`;
+  }
+  return formatBDT(value);
 }
+
+const QUICK_LINKS = [
+  { to: '/market', label: '🔭 View Market', desc: 'Browse live prices' },
+  { to: '/portfolio', label: '📊 Portfolio', desc: 'Your holdings & P/L' },
+  { to: '/predictions', label: '🎯 Predictions', desc: 'Stake virtual points' },
+  { to: '/achievements', label: '🏆 Achievements', desc: 'Your milestones' },
+  { to: '/leaderboard', label: '🥇 Leaderboard', desc: 'Compare with others' },
+  { to: '/learning', label: '🎓 Learning', desc: 'Crypto basics' },
+];
 
 export function DashboardPage() {
   const { user, wallet } = useAuth();
@@ -30,79 +42,152 @@ export function DashboardPage() {
   }, []);
 
   const unlockedCount = achievements.filter((a) => a.unlocked).length;
+  const totalValue =
+    (wallet?.cashBalanceBDT ?? 0) + (portfolio?.totalValueBDT ?? 0);
+  const returnPct =
+    STARTING_BALANCE_BDT > 0
+      ? ((totalValue - STARTING_BALANCE_BDT) / STARTING_BALANCE_BDT) * 100
+      : 0;
+  const pnlPositive = (portfolio?.totalUnrealizedPnlBDT ?? 0) >= 0;
+  const returnPositive = returnPct >= 0;
 
   return (
-    <div className="space-y-6">
-      <div className="bg-white shadow rounded-lg p-6">
-        <h2 className="text-2xl font-bold text-gray-900 mb-4">Welcome, {user?.name}!</h2>
-        <p className="text-gray-600">
-          This is your central dashboard. Start exploring the market and practice your trading strategies without any financial risk.
-        </p>
+    <div className="page-stack">
+      {/* ─── Welcome Banner ─── */}
+      <div
+        style={{
+          background: 'linear-gradient(135deg, var(--color-ink) 0%, #2b3139 100%)',
+          borderRadius: 'var(--radius-xl)',
+          padding: '32px',
+          color: '#fff',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: 24,
+        }}
+      >
+        <div>
+          <p style={{ fontSize: 13, color: '#929aa5', marginBottom: 6 }}>Welcome back</p>
+          <h1 style={{ fontSize: 28, fontWeight: 700, color: '#fff', margin: 0 }}>
+            {user?.name} 👋
+          </h1>
+          <p style={{ color: '#707a8a', fontSize: 14, marginTop: 8, maxWidth: 400 }}>
+            Practice trading and learn crypto market mechanics — completely risk-free.
+          </p>
+        </div>
+        <Link to="/market" className="btn btn-primary" style={{ flexShrink: 0 }}>
+          Go to Market →
+        </Link>
       </div>
 
-      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-        {/* Wallet Overview Card */}
-        <div className="bg-white shadow rounded-lg p-6 flex flex-col">
-          <h3 className="text-lg font-medium text-gray-900 mb-2">Virtual Wallet</h3>
-          <div className="mt-2 flex-grow">
-            <p className="text-sm text-gray-500">Available Balance</p>
-            <p className="text-3xl font-bold text-purple-600 mt-1">
-              ৳{wallet?.cashBalanceBDT?.toLocaleString() || '0'}
-            </p>
-          </div>
-          <div className="mt-4 pt-4 border-t border-gray-100">
-            <p className="text-xs text-gray-500">
-              Initial starting balance: ৳{STARTING_BALANCE_BDT.toLocaleString()}
-            </p>
-          </div>
+      {/* ─── Stat Cards ─── */}
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+          gap: 16,
+        }}
+      >
+        {/* Cash Balance */}
+        <div className="stat-card">
+          <p className="stat-label">Available Cash</p>
+          <p className="stat-value-yellow" style={{ fontFamily: 'var(--font-mono)', fontSize: 26, fontWeight: 700 }}>
+            {wallet?.cashBalanceBDT !== undefined
+              ? formatBDT(wallet.cashBalanceBDT)
+              : '…'}
+          </p>
+          <p className="text-muted" style={{ fontSize: 12, marginTop: 6 }}>
+            Started with {formatBDT(STARTING_BALANCE_BDT)}
+          </p>
         </div>
 
-        {/* Portfolio summary */}
-        <div className="bg-white shadow rounded-lg p-6 flex flex-col">
-          <h3 className="text-lg font-medium text-gray-900 mb-2">Portfolio Overview</h3>
-          <div className="mt-2 flex-grow">
-            <p className="text-sm text-gray-500">Market Value</p>
-            <p className="text-3xl font-bold text-gray-900 mt-1">
-              {formatBDT(portfolio?.totalValueBDT ?? 0)}
+        {/* Portfolio Value */}
+        <div className="stat-card">
+          <p className="stat-label">Portfolio Value</p>
+          <p className="stat-value" style={{ fontSize: 26 }}>
+            {formatBDT(portfolio?.totalValueBDT ?? 0)}
+          </p>
+          {portfolio?.totalUnrealizedPnlBDT !== undefined && (
+            <p
+              className={pnlPositive ? 'text-up' : 'text-down'}
+              style={{ fontSize: 12, marginTop: 6, fontFamily: 'var(--font-mono)' }}
+            >
+              {pnlPositive ? '+' : ''}
+              {formatBDT(portfolio.totalUnrealizedPnlBDT)} unrealized
             </p>
-            <p className={`text-sm font-medium mt-1 ${pnlColorClass(portfolio?.totalUnrealizedPnlBDT)}`}>
-              {portfolio?.totalUnrealizedPnlBDT > 0 ? '+' : ''}
-              {formatBDT(portfolio?.totalUnrealizedPnlBDT ?? 0)} unrealized
-            </p>
-          </div>
-          <div className="mt-4 pt-4 border-t border-gray-100">
-            <Link to="/portfolio" className="text-xs text-purple-600 hover:underline">
-              View full portfolio →
-            </Link>
-          </div>
+          )}
         </div>
 
-        {/* Gamification stats */}
-        <div className="bg-white shadow rounded-lg p-6 flex flex-col">
-          <h3 className="text-lg font-medium text-gray-900 mb-2">Your Stats</h3>
-          <div className="mt-2 flex-grow grid grid-cols-2 gap-4">
-            <div>
-              <p className="text-sm text-gray-500">Virtual Points</p>
-              <p className="text-3xl font-bold text-purple-600 mt-1">{wallet?.virtualPoints ?? 0}</p>
-            </div>
-            <div>
-              <p className="text-sm text-gray-500">Achievements</p>
-              <p className="text-3xl font-bold text-gray-900 mt-1">
-                {unlockedCount}/{achievements.length || '—'}
-              </p>
-            </div>
-          </div>
-          <div className="mt-4 pt-4 border-t border-gray-100 flex gap-4 flex-wrap">
-            <Link to="/wallet" className="text-xs text-purple-600 hover:underline">
-              Buy points →
+        {/* Total Account Return */}
+        <div className="stat-card">
+          <p className="stat-label">Total Return</p>
+          <p
+            className={returnPositive ? 'text-up' : 'text-down'}
+            style={{ fontFamily: 'var(--font-mono)', fontSize: 26, fontWeight: 700 }}
+          >
+            {returnPositive ? '+' : ''}{returnPct.toFixed(2)}%
+          </p>
+          <p className="text-muted" style={{ fontSize: 12, marginTop: 6 }}>
+            Account value: {formatBDT(totalValue)}
+          </p>
+        </div>
+
+        {/* Virtual Points */}
+        <div className="stat-card">
+          <p className="stat-label">Virtual Points</p>
+          <p className="stat-value" style={{ fontFamily: 'var(--font-mono)', fontSize: 26 }}>
+            {wallet?.virtualPoints ?? 0}
+          </p>
+          <p className="text-muted" style={{ fontSize: 12, marginTop: 6 }}>
+            {unlockedCount}/{achievements.length || '—'} achievements
+          </p>
+        </div>
+      </div>
+
+      {/* ─── Quick Links Grid ─── */}
+      <div>
+        <h2 className="section-title" style={{ marginBottom: 14 }}>Quick Navigation</h2>
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))',
+            gap: 12,
+          }}
+        >
+          {QUICK_LINKS.map(({ to, label, desc }) => (
+            <Link
+              key={to}
+              to={to}
+              style={{ textDecoration: 'none' }}
+            >
+              <div
+                className="card card-p-sm"
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 6,
+                  transition: 'all 150ms ease',
+                  cursor: 'pointer',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.borderColor = 'rgba(252,213,53,0.5)';
+                  e.currentTarget.style.transform = 'translateY(-1px)';
+                  e.currentTarget.style.boxShadow = 'var(--shadow-elevated)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.borderColor = 'var(--color-hairline)';
+                  e.currentTarget.style.transform = 'none';
+                  e.currentTarget.style.boxShadow = 'none';
+                }}
+              >
+                <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--color-ink)', margin: 0 }}>
+                  {label}
+                </p>
+                <p style={{ fontSize: 12, color: 'var(--color-muted)', margin: 0 }}>{desc}</p>
+              </div>
             </Link>
-            <Link to="/predictions" className="text-xs text-purple-600 hover:underline">
-              Make a prediction →
-            </Link>
-            <Link to="/achievements" className="text-xs text-purple-600 hover:underline">
-              View achievements →
-            </Link>
-          </div>
+          ))}
         </div>
       </div>
     </div>

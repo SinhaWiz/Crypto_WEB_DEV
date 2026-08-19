@@ -25,11 +25,9 @@ export function WalletPage() {
   async function handleSubmit(e) {
     e.preventDefault();
     if (!canSubmit) return;
-
     setIsSubmitting(true);
     setError(null);
     setSuccessMessage(null);
-
     try {
       await buyPoints({ pointsToBuy: parsedPoints });
       setSuccessMessage(`Purchased ${parsedPoints} point(s) for ${formatBDT(costBDT)}.`);
@@ -43,84 +41,129 @@ export function WalletPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="page-stack">
+      {/* Header */}
       <div>
-        <h2 className="text-2xl font-bold text-gray-900">Wallet</h2>
-        <p className="text-gray-500 text-sm mt-1">
-          Manage your cash balance and buy virtual points to stake on predictions.
-        </p>
+        <h1 className="page-title">Wallet</h1>
+        <p className="page-subtitle">Manage your cash balance and virtual points.</p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 lg:col-span-2">
-          <form onSubmit={handleSubmit} className="space-y-4">
+      {/* ─── Balance Overview ─── */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16 }}>
+        <div className="stat-card">
+          <p className="stat-label">Cash Balance</p>
+          <p className="stat-value-yellow" style={{ fontFamily: 'var(--font-mono)', fontSize: 28, fontWeight: 700 }}>
+            {formatBDT(availableCashBDT)}
+          </p>
+          <p className="text-muted" style={{ fontSize: 12, marginTop: 4 }}>Available for trading & points</p>
+        </div>
+        <div className="stat-card">
+          <p className="stat-label">Virtual Points</p>
+          <p className="stat-value" style={{ fontFamily: 'var(--font-mono)', fontSize: 28, fontWeight: 700 }}>
+            {wallet?.virtualPoints ?? 0}
+          </p>
+          <p className="text-muted" style={{ fontSize: 12, marginTop: 4 }}>Use to stake predictions</p>
+        </div>
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) 320px', gap: 20, alignItems: 'start' }}>
+        {/* ─── Buy Points Form ─── */}
+        <div className="card card-p">
+          <h2 className="section-title" style={{ marginBottom: 20, fontSize: 18 }}>Buy Virtual Points</h2>
+
+          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
             <div>
-              <label htmlFor="points-to-buy" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="points-to-buy" className="cs-label">
                 Points to buy
               </label>
               <input
                 id="points-to-buy"
                 type="number"
-                min="0"
+                min="1"
                 step="1"
                 value={pointsToBuy}
-                onChange={(e) => setPointsToBuy(e.target.value)}
-                placeholder="0"
-                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+                onChange={(e) => { setPointsToBuy(e.target.value); setError(null); setSuccessMessage(null); }}
+                placeholder="e.g. 10"
+                className="cs-input"
+                style={{ fontFamily: 'var(--font-mono)', fontSize: 16 }}
               />
-              <p className="text-xs text-gray-500 mt-1">
-                Rate: 1 point = {formatBDT(POINTS_EXCHANGE_RATE_BDT)}
+              <p className="text-muted" style={{ fontSize: 12, marginTop: 6 }}>
+                Rate: 1 point = {formatBDT(POINTS_EXCHANGE_RATE_BDT)} cash
               </p>
             </div>
 
-            <div className="bg-gray-50 rounded-md p-3 space-y-1 text-sm">
-              <div className="flex justify-between">
-                <span className="text-gray-500">Cost</span>
-                <span className="font-medium text-gray-900">{formatBDT(costBDT)}</span>
+            {/* Order Summary */}
+            <div className="order-summary">
+              <div className="order-row">
+                <span className="label">Points</span>
+                <span className="value">{hasValidPoints ? parsedPoints : '—'}</span>
               </div>
-              <div className="flex justify-between">
-                <span className="text-gray-500">Available balance</span>
-                <span className="font-medium text-gray-900">{formatBDT(availableCashBDT)}</span>
+              <div className="order-row">
+                <span className="label">Cost</span>
+                <span className="value">{hasValidPoints ? formatBDT(costBDT) : '—'}</span>
+              </div>
+              <div className="order-row" style={{ paddingTop: 8, marginTop: 6, borderTop: '1px solid var(--color-hairline)' }}>
+                <span className="label" style={{ fontWeight: 600, color: 'var(--color-body)' }}>Available cash</span>
+                <span className="value" style={{ color: insufficientCash ? 'var(--color-down)' : 'var(--color-ink)' }}>
+                  {formatBDT(availableCashBDT)}
+                </span>
               </div>
             </div>
 
             {insufficientCash && (
-              <p className="text-sm text-red-600">You don't have enough cash balance for this purchase.</p>
+              <p className="msg-error">Insufficient cash balance for this purchase.</p>
             )}
-            {error && <p className="text-sm text-red-600">{error}</p>}
-            {successMessage && <p className="text-sm text-green-600">{successMessage}</p>}
+            {error && <p className="msg-error">{error}</p>}
+            {successMessage && <p className="msg-success">{successMessage}</p>}
 
             <button
               type="submit"
+              id="buy-points-btn"
               disabled={!canSubmit}
-              className="w-full py-2.5 rounded-md text-sm font-semibold text-white bg-purple-600 hover:bg-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="btn btn-primary btn-full"
             >
-              {isSubmitting ? 'Buying points…' : 'Buy Points'}
+              {isSubmitting ? (
+                <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span className="spinner" style={{ width: 16, height: 16 }} />
+                  Buying…
+                </span>
+              ) : (
+                'Buy Points'
+              )}
             </button>
           </form>
         </div>
 
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 space-y-4">
+        {/* ─── Info Card ─── */}
+        <div className="card card-p" style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
           <div>
-            <h3 className="text-sm font-semibold text-gray-900 mb-2">Your balances</h3>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <p className="text-sm text-gray-500">Cash</p>
-                <p className="text-2xl font-bold text-purple-600 mt-1">{formatBDT(availableCashBDT)}</p>
-              </div>
-              <div>
-                <p className="text-sm text-gray-500">Points</p>
-                <p className="text-2xl font-bold text-gray-900 mt-1">{wallet?.virtualPoints ?? 0}</p>
-              </div>
+            <h3 className="section-title" style={{ marginBottom: 12 }}>How it works</h3>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {[
+                { icon: '🎯', text: 'Points are used to stake predictions on price direction.' },
+                { icon: '✅', text: `Win a prediction and get double your stake back.` },
+                { icon: '💸', text: `1 point costs ${formatBDT(POINTS_EXCHANGE_RATE_BDT)} of your cash balance.` },
+                { icon: '⚡', text: `Buying and selling coins carries a ${(TRADE_FEE_RATE * 100).toFixed(1)}% platform fee.` },
+              ].map(({ icon, text }) => (
+                <div key={text} style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+                  <span style={{ fontSize: 16, flexShrink: 0 }}>{icon}</span>
+                  <p style={{ fontSize: 13, color: 'var(--color-muted)', margin: 0, lineHeight: 1.5 }}>{text}</p>
+                </div>
+              ))}
             </div>
           </div>
-          <div className="pt-4 border-t border-gray-100">
-            <h3 className="text-sm font-semibold text-gray-900 mb-2">How it works</h3>
-            <ul className="text-sm text-gray-600 space-y-2 list-disc list-inside">
-              <li>Points are used to stake predictions.</li>
-              <li>1 point costs {formatBDT(POINTS_EXCHANGE_RATE_BDT)} of your cash balance.</li>
-              <li>Buying and selling coins carries a {(TRADE_FEE_RATE * 100).toFixed(1)}% platform fee.</li>
-            </ul>
+
+          <div
+            style={{
+              padding: '14px 16px',
+              backgroundColor: 'rgba(252,213,53,0.07)',
+              borderRadius: 'var(--radius-lg)',
+              border: '1px solid rgba(252,213,53,0.25)',
+            }}
+          >
+            <p style={{ fontSize: 12, color: 'var(--color-muted)', lineHeight: 1.5 }}>
+              All balances are virtual and for educational purposes only. No real money is involved.
+            </p>
           </div>
         </div>
       </div>

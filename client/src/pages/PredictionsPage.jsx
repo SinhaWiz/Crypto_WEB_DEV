@@ -19,17 +19,14 @@ function formatBDT(value) {
 function formatDate(value) {
   if (!value) return '—';
   return new Date(value).toLocaleString([], {
-    month: 'short',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
+    month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit',
   });
 }
 
-function resultBadgeClass(result) {
-  if (result === 'win') return 'bg-green-100 text-green-800';
-  if (result === 'loss') return 'bg-red-100 text-red-800';
-  return 'bg-yellow-100 text-yellow-800';
+function ResultBadge({ result }) {
+  if (result === 'win') return <span className="badge badge-up">WIN</span>;
+  if (result === 'loss') return <span className="badge badge-down">LOSS</span>;
+  return <span className="badge badge-pending">PENDING</span>;
 }
 
 export function PredictionsPage() {
@@ -55,22 +52,14 @@ export function PredictionsPage() {
       .finally(() => setIsLoadingHistory(false));
   }, [historyPageNumber]);
 
-  useEffect(() => {
-    loadHistory();
-  }, [loadHistory]);
+  useEffect(() => { loadHistory(); }, [loadHistory]);
 
   useEffect(() => {
     let cancelled = false;
     getCoin(symbol)
-      .then((coin) => {
-        if (!cancelled) setCurrentPriceBDT(coin.priceBDT);
-      })
-      .catch(() => {
-        if (!cancelled) setCurrentPriceBDT(null);
-      });
-    return () => {
-      cancelled = true;
-    };
+      .then((coin) => { if (!cancelled) setCurrentPriceBDT(coin.priceBDT); })
+      .catch(() => { if (!cancelled) setCurrentPriceBDT(null); });
+    return () => { cancelled = true; };
   }, [symbol]);
 
   const parsedPoints = Number(pointsStaked);
@@ -82,15 +71,13 @@ export function PredictionsPage() {
   async function handleSubmit(e) {
     e.preventDefault();
     if (!canSubmit) return;
-
     setIsSubmitting(true);
     setError(null);
     setSuccessMessage(null);
-
     try {
       await placePrediction({ symbol, direction, pointsStaked: parsedPoints, durationMinutes });
       setSuccessMessage(
-        `Prediction placed: ${symbol} will go ${direction} within ${durationMinutes} minutes.`
+        `✓ Prediction placed: ${symbol} will go ${direction === 'up' ? '↑ UP' : '↓ DOWN'} within ${durationMinutes} min.`
       );
       setPointsStaked('');
       await refreshWallet();
@@ -103,73 +90,118 @@ export function PredictionsPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="page-stack">
+      {/* Header */}
       <div>
-        <h2 className="text-2xl font-bold text-gray-900">Predictions</h2>
-        <p className="text-gray-500 text-sm mt-1">
+        <h1 className="page-title">Predictions</h1>
+        <p className="page-subtitle">
           Stake virtual points on where a coin's price is headed. Correct calls double your stake.
         </p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 lg:col-span-2">
-          <form onSubmit={handleSubmit} className="space-y-4">
+      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) 280px', gap: 20, alignItems: 'start' }}>
+        {/* ─── Prediction Form ─── */}
+        <div className="card card-p">
+          <h2 className="section-title" style={{ marginBottom: 20, fontSize: 18 }}>Place a Prediction</h2>
+
+          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+            {/* Coin + current price */}
             <div>
-              <label htmlFor="prediction-symbol" className="block text-sm font-medium text-gray-700 mb-1">
-                Coin
-              </label>
+              <label htmlFor="prediction-symbol" className="cs-label">Coin</label>
               <select
                 id="prediction-symbol"
                 value={symbol}
                 onChange={(e) => setSymbol(e.target.value)}
-                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+                className="cs-select"
               >
                 {SUPPORTED_SYMBOLS.map((sym) => (
-                  <option key={sym} value={sym}>
-                    {sym}
-                  </option>
+                  <option key={sym} value={sym}>{sym}</option>
                 ))}
               </select>
-              <p className="text-xs text-gray-500 mt-1">Current price: {formatBDT(currentPriceBDT)}</p>
+              {currentPriceBDT && (
+                <p style={{ fontSize: 12, color: 'var(--color-muted)', marginTop: 6 }}>
+                  Current price:{' '}
+                  <span style={{ fontFamily: 'var(--font-mono)', color: 'var(--color-ink)', fontWeight: 600 }}>
+                    {formatBDT(currentPriceBDT)}
+                  </span>
+                </p>
+              )}
             </div>
 
+            {/* Direction */}
             <div>
-              <span className="block text-sm font-medium text-gray-700 mb-1">Direction</span>
-              <div className="grid grid-cols-2 gap-2">
+              <span className="cs-label">Direction</span>
+              <div
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: '1fr 1fr',
+                  gap: 10,
+                  padding: 4,
+                  background: 'var(--color-surface)',
+                  borderRadius: 'var(--radius-lg)',
+                  border: '1px solid var(--color-hairline)',
+                }}
+              >
                 <button
                   type="button"
+                  id="pred-dir-up"
                   onClick={() => setDirection('up')}
-                  className={`py-2 rounded-md text-sm font-semibold transition-colors ${
-                    direction === 'up' ? 'bg-green-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                  }`}
+                  style={{
+                    padding: '12px 0',
+                    borderRadius: 6,
+                    border: 'none',
+                    fontSize: 15,
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    transition: 'all 150ms ease',
+                    backgroundColor: direction === 'up' ? 'var(--color-up)' : 'transparent',
+                    color: direction === 'up' ? '#fff' : 'var(--color-muted)',
+                  }}
                 >
-                  ↑ Up
+                  ▲ Up
                 </button>
                 <button
                   type="button"
+                  id="pred-dir-down"
                   onClick={() => setDirection('down')}
-                  className={`py-2 rounded-md text-sm font-semibold transition-colors ${
-                    direction === 'down' ? 'bg-red-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                  }`}
+                  style={{
+                    padding: '12px 0',
+                    borderRadius: 6,
+                    border: 'none',
+                    fontSize: 15,
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    transition: 'all 150ms ease',
+                    backgroundColor: direction === 'down' ? 'var(--color-down)' : 'transparent',
+                    color: direction === 'down' ? '#fff' : 'var(--color-muted)',
+                  }}
                 >
-                  ↓ Down
+                  ▼ Down
                 </button>
               </div>
             </div>
 
+            {/* Duration presets */}
             <div>
-              <span className="block text-sm font-medium text-gray-700 mb-1">Closes in</span>
-              <div className="grid grid-cols-4 gap-2">
+              <span className="cs-label">Closes in</span>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8 }}>
                 {DURATION_PRESETS.map((preset) => (
                   <button
                     key={preset.minutes}
                     type="button"
+                    id={`duration-${preset.minutes}`}
                     onClick={() => setDurationMinutes(preset.minutes)}
-                    className={`py-2 rounded-md text-xs font-semibold transition-colors ${
-                      durationMinutes === preset.minutes
-                        ? 'bg-purple-600 text-white'
-                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                    }`}
+                    style={{
+                      padding: '8px 0',
+                      borderRadius: 'var(--radius-md)',
+                      border: `1px solid ${durationMinutes === preset.minutes ? 'var(--color-primary)' : 'var(--color-hairline)'}`,
+                      fontSize: 13,
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                      transition: 'all 150ms ease',
+                      backgroundColor: durationMinutes === preset.minutes ? 'rgba(252,213,53,0.12)' : 'var(--color-canvas)',
+                      color: durationMinutes === preset.minutes ? 'var(--color-on-primary-text, #92700a)' : 'var(--color-body)',
+                    }}
                   >
                     {preset.label}
                   </button>
@@ -177,115 +209,158 @@ export function PredictionsPage() {
               </div>
             </div>
 
+            {/* Points to stake */}
             <div>
-              <label htmlFor="prediction-points" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="prediction-points" className="cs-label">
                 Points to stake
               </label>
               <input
                 id="prediction-points"
                 type="number"
-                min="0"
+                min="1"
                 step="1"
                 value={pointsStaked}
-                onChange={(e) => setPointsStaked(e.target.value)}
+                onChange={(e) => { setPointsStaked(e.target.value); setError(null); setSuccessMessage(null); }}
                 placeholder="0"
-                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+                className="cs-input"
+                style={{ fontFamily: 'var(--font-mono)', fontSize: 16 }}
               />
-              <p className="text-xs text-gray-500 mt-1">Available points: {availablePoints}</p>
+              <p style={{ fontSize: 12, color: 'var(--color-muted)', marginTop: 6 }}>
+                Available:{' '}
+                <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 600, color: 'var(--color-ink)' }}>
+                  {availablePoints} pts
+                </span>
+                {hasValidPoints && !insufficientPoints && (
+                  <span style={{ marginLeft: 8, color: 'var(--color-up)' }}>
+                    → Win: {parsedPoints * 2} pts
+                  </span>
+                )}
+              </p>
             </div>
 
             {insufficientPoints && (
-              <p className="text-sm text-red-600">You don't have enough points for this stake.</p>
+              <p className="msg-error">You don't have enough points for this stake.</p>
             )}
-            {error && <p className="text-sm text-red-600">{error}</p>}
-            {successMessage && <p className="text-sm text-green-600">{successMessage}</p>}
+            {error && <p className="msg-error">{error}</p>}
+            {successMessage && <p className="msg-success">{successMessage}</p>}
 
             <button
               type="submit"
+              id="place-prediction-btn"
               disabled={!canSubmit}
-              className="w-full py-2.5 rounded-md text-sm font-semibold text-white bg-purple-600 hover:bg-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="btn btn-primary btn-full"
             >
-              {isSubmitting ? 'Placing prediction…' : 'Place Prediction'}
+              {isSubmitting ? 'Placing…' : 'Place Prediction'}
             </button>
           </form>
         </div>
 
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-          <h3 className="text-sm font-semibold text-gray-900 mb-2">How it works</h3>
-          <ul className="text-sm text-gray-600 space-y-2 list-disc list-inside">
-            <li>Pick a coin, a direction, and how many points to stake.</li>
-            <li>Your prediction is judged against your own simulated price feed.</li>
-            <li>Win: get double your stake back. Lose: forfeit the stake.</li>
-          </ul>
+        {/* ─── Info Card ─── */}
+        <div className="card card-p" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <h3 className="section-title">How it works</h3>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            {[
+              { step: '1', text: 'Pick a coin, direction (up/down), duration, and points to stake.' },
+              { step: '2', text: 'Your prediction is judged against your own simulated price feed at the close time.' },
+              { step: '3', text: 'Win: get double your stake back. Lose: forfeit the stake.' },
+            ].map(({ step, text }) => (
+              <div key={step} style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+                <div
+                  style={{
+                    width: 24,
+                    height: 24,
+                    borderRadius: '50%',
+                    backgroundColor: 'var(--color-primary)',
+                    color: 'var(--color-on-primary)',
+                    fontSize: 12,
+                    fontWeight: 700,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    flexShrink: 0,
+                  }}
+                >
+                  {step}
+                </div>
+                <p style={{ fontSize: 13, color: 'var(--color-muted)', margin: 0, lineHeight: 1.5 }}>{text}</p>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-100">
-          <h3 className="text-sm font-semibold text-gray-900">Your Predictions</h3>
+      {/* ─── Prediction History ─── */}
+      <div className="card" style={{ overflow: 'hidden' }}>
+        <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--color-hairline)' }}>
+          <p className="section-title">Your Predictions</p>
         </div>
 
         {isLoadingHistory ? (
-          <div className="p-10 text-center text-gray-400 text-sm">Loading predictions…</div>
+          <div style={{ padding: 48, textAlign: 'center' }}>
+            <span className="spinner" style={{ margin: '0 auto' }} />
+          </div>
         ) : !historyPage || historyPage.predictions.length === 0 ? (
-          <div className="p-10 text-center text-gray-500 text-sm">No predictions yet.</div>
+          <div style={{ padding: 48, textAlign: 'center' }}>
+            <p className="text-muted" style={{ fontSize: 14 }}>No predictions yet.</p>
+          </div>
         ) : (
           <>
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-100">
-                <thead className="bg-gray-50">
+            <div style={{ overflowX: 'auto' }}>
+              <table className="cs-table">
+                <thead>
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Coin</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Direction</th>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Staked</th>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Start Price</th>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">End Price</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Closes</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Result</th>
+                    <th>Coin</th>
+                    <th>Direction</th>
+                    <th className="text-right">Staked</th>
+                    <th className="text-right">Start Price</th>
+                    <th className="text-right">End Price</th>
+                    <th>Closes</th>
+                    <th>Result</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-100">
+                <tbody>
                   {historyPage.predictions.map((prediction) => (
                     <tr key={prediction._id}>
-                      <td className="px-6 py-4 whitespace-nowrap font-medium text-gray-900">{prediction.symbol}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-gray-700">
-                        {prediction.direction === 'up' ? '↑ Up' : '↓ Down'}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right text-gray-700">{prediction.pointsStaked}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right text-gray-700">{formatBDT(prediction.startPriceBDT)}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right text-gray-700">{formatBDT(prediction.endPriceBDT)}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-gray-500 text-sm">{formatDate(prediction.closesAt)}</td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`px-2 py-0.5 rounded text-xs font-semibold ${resultBadgeClass(prediction.result)}`}>
-                          {prediction.result.toUpperCase()}
+                      <td className="font-medium">{prediction.symbol}</td>
+                      <td>
+                        <span
+                          className={prediction.direction === 'up' ? 'text-up' : 'text-down'}
+                          style={{ fontWeight: 600 }}
+                        >
+                          {prediction.direction === 'up' ? '▲ Up' : '▼ Down'}
                         </span>
                       </td>
+                      <td className="text-right num">{prediction.pointsStaked} pts</td>
+                      <td className="text-right num">{formatBDT(prediction.startPriceBDT)}</td>
+                      <td className="text-right num">{formatBDT(prediction.endPriceBDT)}</td>
+                      <td style={{ fontSize: 12, color: 'var(--color-muted)' }}>{formatDate(prediction.closesAt)}</td>
+                      <td><ResultBadge result={prediction.result} /></td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
 
-            <div className="flex items-center justify-between px-6 py-3 border-t border-gray-100 text-sm">
-              <span className="text-gray-500">
+            <div className="pagination">
+              <span className="pagination-info">
                 Page {historyPage.page} of {historyPage.totalPages}
               </span>
-              <div className="flex gap-2">
+              <div style={{ display: 'flex', gap: 8 }}>
                 <button
                   type="button"
                   onClick={() => setHistoryPageNumber((p) => Math.max(1, p - 1))}
                   disabled={historyPage.page <= 1}
-                  className="px-3 py-1.5 rounded-md border border-gray-200 text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="btn btn-secondary btn-sm"
                 >
-                  Previous
+                  ← Prev
                 </button>
                 <button
                   type="button"
                   onClick={() => setHistoryPageNumber((p) => Math.min(historyPage.totalPages, p + 1))}
                   disabled={historyPage.page >= historyPage.totalPages}
-                  className="px-3 py-1.5 rounded-md border border-gray-200 text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="btn btn-secondary btn-sm"
                 >
-                  Next
+                  Next →
                 </button>
               </div>
             </div>

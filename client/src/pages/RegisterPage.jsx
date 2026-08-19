@@ -2,13 +2,20 @@ import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../features/auth/AuthContext';
 
+const DIFFICULTIES = [
+  { value: 'beginner', label: 'Beginner', desc: 'Low volatility, gentle price swings' },
+  { value: 'intermediate', label: 'Intermediate', desc: 'Moderate volatility, realistic market feel' },
+  { value: 'expert', label: 'Expert', desc: 'High volatility, near real-market intensity' },
+];
+
 export function RegisterPage() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [difficulty, setDifficulty] = useState('beginner');
   const [error, setError] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  
+
   const { register } = useAuth();
   const navigate = useNavigate();
 
@@ -17,7 +24,7 @@ export function RegisterPage() {
     setIsSubmitting(true);
     setError(null);
     try {
-      await register({ name, email, password });
+      await register({ name, email, password, difficulty });
       navigate('/dashboard', { replace: true });
     } catch (err) {
       setError(err.message || 'Registration failed. Please try again.');
@@ -27,95 +34,158 @@ export function RegisterPage() {
   };
 
   return (
-    <div className="min-h-[80vh] flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8 bg-white p-10 rounded-xl shadow-lg border border-gray-100">
-        <div>
-          <h2 className="mt-2 text-center text-3xl font-extrabold text-gray-900 tracking-tight">
-            Create an account
-          </h2>
-          <p className="mt-2 text-center text-sm text-gray-600">
-            Already have an account?{' '}
-            <Link to="/login" className="font-medium text-purple-600 hover:text-purple-500 transition-colors">
-              Sign in here
+    <div
+      style={{
+        minHeight: '72vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '32px 16px',
+      }}
+    >
+      <div
+        style={{
+          width: '100%',
+          maxWidth: 460,
+          backgroundColor: 'var(--color-surface-card)',
+          border: '1px solid var(--color-hairline)',
+          borderRadius: 'var(--radius-xl)',
+          padding: 36,
+          boxShadow: 'var(--shadow-elevated)',
+        }}
+      >
+        {/* Header */}
+        <div style={{ marginBottom: 28 }}>
+          <p className="section-label" style={{ marginBottom: 8 }}>CryptoSim</p>
+          <h1 className="page-title" style={{ fontSize: 28 }}>Create an account</h1>
+          <p style={{ fontSize: 14, color: 'var(--color-muted)', marginTop: 6 }}>
+            Already have one?{' '}
+            <Link
+              to="/login"
+              style={{ color: 'var(--color-primary)', fontWeight: 600, textDecoration: 'none' }}
+            >
+              Sign in
             </Link>
           </p>
         </div>
-        
-        {error && (
-          <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded-md">
-            <div className="flex">
-              <div className="flex-shrink-0">
-                <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-                </svg>
-              </div>
-              <div className="ml-3">
-                <p className="text-sm text-red-700">{error}</p>
-              </div>
-            </div>
-          </div>
-        )}
 
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-          <div className="space-y-4 rounded-md shadow-sm">
-            <div>
-              <label htmlFor="name" className="sr-only">Full Name</label>
-              <input
-                id="name"
-                name="name"
-                type="text"
-                autoComplete="name"
-                required
-                className="appearance-none rounded-lg relative block w-full px-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-purple-500 focus:border-purple-500 focus:z-10 sm:text-sm transition-colors"
-                placeholder="Full Name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-              />
-            </div>
-            <div>
-              <label htmlFor="email-address" className="sr-only">Email address</label>
-              <input
-                id="email-address"
-                name="email"
-                type="email"
-                autoComplete="email"
-                required
-                className="appearance-none rounded-lg relative block w-full px-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-purple-500 focus:border-purple-500 focus:z-10 sm:text-sm transition-colors"
-                placeholder="Email address"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-              />
-            </div>
-            <div>
-              <label htmlFor="password" className="sr-only">Password</label>
-              <input
-                id="password"
-                name="password"
-                type="password"
-                autoComplete="new-password"
-                required
-                className="appearance-none rounded-lg relative block w-full px-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-purple-500 focus:border-purple-500 focus:z-10 sm:text-sm transition-colors"
-                placeholder="Password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-              />
-            </div>
+        {/* Error */}
+        {error && <div className="msg-error" style={{ marginBottom: 20 }}>{error}</div>}
+
+        {/* Form */}
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <div>
+            <label htmlFor="reg-name" className="cs-label">Full Name</label>
+            <input
+              id="reg-name"
+              name="name"
+              type="text"
+              autoComplete="name"
+              required
+              className="cs-input"
+              placeholder="Your name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+            />
           </div>
 
           <div>
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition-colors disabled:opacity-70 disabled:cursor-not-allowed"
-            >
-              {isSubmitting ? (
-                <span className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></span>
-              ) : (
-                'Sign up'
-              )}
-            </button>
+            <label htmlFor="reg-email" className="cs-label">Email address</label>
+            <input
+              id="reg-email"
+              name="email"
+              type="email"
+              autoComplete="email"
+              required
+              className="cs-input"
+              placeholder="your@email.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+            />
           </div>
+
+          <div>
+            <label htmlFor="reg-password" className="cs-label">Password</label>
+            <input
+              id="reg-password"
+              name="password"
+              type="password"
+              autoComplete="new-password"
+              required
+              className="cs-input"
+              placeholder="Minimum 8 characters"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+            />
+          </div>
+
+          {/* Difficulty Selector */}
+          <div>
+            <label className="cs-label">Market Difficulty</label>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {DIFFICULTIES.map(({ value, label, desc }) => (
+                <label
+                  key={value}
+                  htmlFor={`diff-${value}`}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 12,
+                    padding: '10px 14px',
+                    borderRadius: 'var(--radius-md)',
+                    border: `1px solid ${difficulty === value ? 'var(--color-primary)' : 'var(--color-hairline)'}`,
+                    backgroundColor: difficulty === value ? 'rgba(252,213,53,0.06)' : 'transparent',
+                    cursor: 'pointer',
+                    transition: 'all 150ms ease',
+                  }}
+                >
+                  <input
+                    id={`diff-${value}`}
+                    type="radio"
+                    name="difficulty"
+                    value={value}
+                    checked={difficulty === value}
+                    onChange={() => setDifficulty(value)}
+                    style={{ accentColor: 'var(--color-primary)', width: 16, height: 16, flexShrink: 0 }}
+                  />
+                  <div>
+                    <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--color-ink)', margin: 0 }}>{label}</p>
+                    <p style={{ fontSize: 12, color: 'var(--color-muted)', margin: 0 }}>{desc}</p>
+                  </div>
+                </label>
+              ))}
+            </div>
+          </div>
+
+          <button
+            type="submit"
+            id="register-submit-btn"
+            disabled={isSubmitting}
+            className="btn btn-primary btn-full"
+            style={{ marginTop: 8 }}
+          >
+            {isSubmitting ? (
+              <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span className="spinner" style={{ width: 16, height: 16 }} />
+                Creating account…
+              </span>
+            ) : (
+              'Create Account — It\'s Free'
+            )}
+          </button>
         </form>
+
+        <p
+          style={{
+            textAlign: 'center',
+            fontSize: 12,
+            color: 'var(--color-muted)',
+            marginTop: 24,
+            lineHeight: 1.5,
+          }}
+        >
+          By registering you agree this is an educational simulator. No real funds are involved.
+        </p>
       </div>
     </div>
   );

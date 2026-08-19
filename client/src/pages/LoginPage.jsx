@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate, useLocation, Link } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../features/auth/AuthContext';
 
 export function LoginPage() {
@@ -7,12 +7,9 @@ export function LoginPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  
+
   const { login } = useAuth();
   const navigate = useNavigate();
-  const location = useLocation();
-
-
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -29,81 +26,106 @@ export function LoginPage() {
   };
 
   return (
-    <div className="min-h-[80vh] flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8 bg-white p-10 rounded-xl shadow-lg border border-gray-100">
-        <div>
-          <h2 className="mt-2 text-center text-3xl font-extrabold text-gray-900 tracking-tight">
-            Welcome back
-          </h2>
-          <p className="mt-2 text-center text-sm text-gray-600">
-            Or{' '}
-            <Link to="/register" className="font-medium text-purple-600 hover:text-purple-500 transition-colors">
-              create a new account
+    <div
+      style={{
+        minHeight: '72vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '32px 16px',
+      }}
+    >
+      <div
+        style={{
+          width: '100%',
+          maxWidth: 420,
+          backgroundColor: 'var(--color-surface-card)',
+          border: '1px solid var(--color-hairline)',
+          borderRadius: 'var(--radius-xl)',
+          padding: 36,
+          boxShadow: 'var(--shadow-elevated)',
+        }}
+      >
+        {/* Header */}
+        <div style={{ marginBottom: 28 }}>
+          <p className="section-label" style={{ marginBottom: 8 }}>CryptoSim</p>
+          <h1 className="page-title" style={{ fontSize: 28 }}>Welcome back</h1>
+          <p style={{ fontSize: 14, color: 'var(--color-muted)', marginTop: 6 }}>
+            Don't have an account?{' '}
+            <Link
+              to="/register"
+              style={{ color: 'var(--color-primary)', fontWeight: 600, textDecoration: 'none' }}
+            >
+              Create one free
             </Link>
           </p>
         </div>
-        
-        {error && (
-          <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded-md">
-            <div className="flex">
-              <div className="flex-shrink-0">
-                <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-                </svg>
-              </div>
-              <div className="ml-3">
-                <p className="text-sm text-red-700">{error}</p>
-              </div>
-            </div>
-          </div>
-        )}
 
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-          <div className="space-y-4 rounded-md shadow-sm">
-            <div>
-              <label htmlFor="email-address" className="sr-only">Email address</label>
-              <input
-                id="email-address"
-                name="email"
-                type="email"
-                autoComplete="email"
-                required
-                className="appearance-none rounded-lg relative block w-full px-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-purple-500 focus:border-purple-500 focus:z-10 sm:text-sm transition-colors"
-                placeholder="Email address"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-              />
-            </div>
-            <div>
-              <label htmlFor="password" className="sr-only">Password</label>
-              <input
-                id="password"
-                name="password"
-                type="password"
-                autoComplete="current-password"
-                required
-                className="appearance-none rounded-lg relative block w-full px-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-purple-500 focus:border-purple-500 focus:z-10 sm:text-sm transition-colors"
-                placeholder="Password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-              />
-            </div>
+        {/* Error */}
+        {error && <div className="msg-error" style={{ marginBottom: 20 }}>{error}</div>}
+
+        {/* Form */}
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <div>
+            <label htmlFor="login-email" className="cs-label">Email address</label>
+            <input
+              id="login-email"
+              name="email"
+              type="email"
+              autoComplete="email"
+              required
+              className="cs-input"
+              placeholder="your@email.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+            />
           </div>
 
           <div>
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition-colors disabled:opacity-70 disabled:cursor-not-allowed"
-            >
-              {isSubmitting ? (
-                <span className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></span>
-              ) : (
-                'Sign in'
-              )}
-            </button>
+            <label htmlFor="login-password" className="cs-label">Password</label>
+            <input
+              id="login-password"
+              name="password"
+              type="password"
+              autoComplete="current-password"
+              required
+              className="cs-input"
+              placeholder="••••••••"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+            />
           </div>
+
+          <button
+            type="submit"
+            id="login-submit-btn"
+            disabled={isSubmitting}
+            className="btn btn-primary btn-full"
+            style={{ marginTop: 8 }}
+          >
+            {isSubmitting ? (
+              <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span className="spinner" style={{ width: 16, height: 16 }} />
+                Signing in…
+              </span>
+            ) : (
+              'Sign in'
+            )}
+          </button>
         </form>
+
+        {/* Footer */}
+        <p
+          style={{
+            textAlign: 'center',
+            fontSize: 12,
+            color: 'var(--color-muted)',
+            marginTop: 24,
+            lineHeight: 1.5,
+          }}
+        >
+          Educational simulator only. No real funds involved.
+        </p>
       </div>
     </div>
   );

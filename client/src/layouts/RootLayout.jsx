@@ -1,91 +1,202 @@
-import { Outlet, Link, useLocation } from 'react-router-dom';
+import { useState, useEffect, useCallback } from 'react';
+import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { DisclaimerBanner } from '../components/DisclaimerBanner';
 import { useAuth } from '../features/auth/AuthContext';
+
+const NAV_LINKS = [
+  { to: '/dashboard', label: 'Dashboard' },
+  { to: '/market', label: 'Market' },
+  { to: '/portfolio', label: 'Portfolio' },
+  { to: '/wallet', label: 'Wallet' },
+  { to: '/predictions', label: 'Predictions' },
+  { to: '/leaderboard', label: 'Leaderboard' },
+  { to: '/achievements', label: 'Achievements' },
+  { to: '/learning', label: 'Learning' },
+];
+
+function MenuIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <line x1="3" y1="12" x2="21" y2="12"/>
+      <line x1="3" y1="6" x2="21" y2="6"/>
+      <line x1="3" y1="18" x2="21" y2="18"/>
+    </svg>
+  );
+}
+
+function CloseIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <line x1="18" y1="6" x2="6" y2="18"/>
+      <line x1="6" y1="6" x2="18" y2="18"/>
+    </svg>
+  );
+}
 
 export function RootLayout() {
   const { user, wallet, logout } = useAuth();
   const location = useLocation();
-  const isHomepage = location.pathname === '/';
+  const navigate = useNavigate();
+  const [mobileOpen, setMobileOpen] = useState(false);
+
+  // Close mobile nav on route change
+  useEffect(() => {
+    setMobileOpen(false);
+  }, [location.pathname]);
+
+  const handleLogout = useCallback(async () => {
+    await logout();
+    navigate('/');
+  }, [logout, navigate]);
+
+  const isActive = (path) => location.pathname === path;
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col text-gray-900 font-sans">
+    <div style={{ minHeight: '100svh', display: 'flex', flexDirection: 'column', backgroundColor: 'var(--color-canvas)', transition: 'background-color 150ms ease' }}>
       <DisclaimerBanner />
-      
-      <header className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between h-16">
-            <div className="flex items-center">
-              <Link to="/" className="flex-shrink-0 flex items-center">
-                <span className="font-bold text-xl text-purple-600 tracking-tight">CryptoSim</span>
-              </Link>
-              {user && (
-                <div className="ml-10 flex space-x-4">
-                  <Link to="/dashboard" className="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium transition-colors mr-4">Dashboard</Link>
-                  <Link to="/market" className="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium transition-colors">Market</Link>
-                  <Link to="/portfolio" className="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium transition-colors">Portfolio</Link>
-                  <Link to="/wallet" className="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium transition-colors">Wallet</Link>
-                  <Link to="/predictions" className="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium transition-colors">Predictions</Link>
-                  <Link to="/leaderboard" className="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium transition-colors">Leaderboard</Link>
-                  <Link to="/achievements" className="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium transition-colors">Achievements</Link>
-                  <Link to="/learning" className="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium transition-colors">Learning</Link>
-                </div>
-              )}
+
+      {/* ─── Top Navigation ─── */}
+      <nav className="nav-root">
+        <div className="nav-inner">
+          {/* Logo */}
+          <Link to="/" className="nav-logo" aria-label="CryptoSim home">
+            <span className="nav-logo-icon">₿</span>
+            <span>CryptoSim</span>
+          </Link>
+
+          {/* Desktop Nav Links */}
+          {user && (
+            <div className="nav-links">
+              {NAV_LINKS.map(({ to, label }) => (
+                <Link
+                  key={to}
+                  to={to}
+                  className={`nav-link${isActive(to) ? ' active' : ''}`}
+                >
+                  {label}
+                </Link>
+              ))}
             </div>
-            
-            <div className="flex items-center space-x-4">
-              {user ? (
-                <>
-                  {!isHomepage && (
-                    <>
-                      <div className="text-sm">
-                        <span className="text-gray-500 mr-2">Balance:</span>
-                        <span className="font-semibold text-gray-900">
-                          {wallet && wallet.cashBalanceBDT !== undefined ? `৳${wallet.cashBalanceBDT.toLocaleString()}` : '...'}
-                        </span>
-                      </div>
-                      <div className="h-6 w-px bg-gray-300"></div>
-                      <div className="text-sm font-medium text-gray-700">
-                        {user.name}
-                      </div>
-                    </>
-                  )}
-                  {isHomepage && (
-                    <Link
-                      to="/dashboard"
-                      className="text-sm font-medium text-purple-600 hover:text-purple-500"
-                    >
-                      Go to Dashboard
-                    </Link>
-                  )}
-                  <button
-                    onClick={logout}
-                    className="ml-4 text-sm text-gray-500 hover:text-gray-700 transition-colors"
-                  >
-                    Logout
-                  </button>
-                </>
-              ) : (
-                <div className="flex space-x-4">
-                  <Link
-                    to="/login"
-                    className="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium transition-colors"
-                  >
-                    Log in
-                  </Link>
-                  <Link
-                    to="/register"
-                    className="bg-purple-600 text-white hover:bg-purple-700 px-4 py-2 rounded-md text-sm font-medium transition-colors"
-                  >
-                    Sign up
-                  </Link>
+          )}
+
+          {/* Right Actions */}
+          <div className="nav-actions">
+            {user ? (
+              <>
+                {/* Balance chip */}
+                <div className="nav-balance-chip" title="Available cash balance">
+                  <span className="label">Balance</span>
+                  <span className="value">
+                    {wallet?.cashBalanceBDT !== undefined
+                      ? `৳${Math.floor(wallet.cashBalanceBDT).toLocaleString()}`
+                      : '…'}
+                  </span>
                 </div>
-              )}
-            </div>
+
+                {/* User name */}
+                <span
+                  style={{
+                    fontSize: 13,
+                    fontWeight: 600,
+                    color: 'var(--color-ink)',
+                    maxWidth: 100,
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
+                  }}
+                  title={user.name}
+                >
+                  {user.name}
+                </span>
+
+                {/* Logout */}
+                <button
+                  onClick={handleLogout}
+                  className="btn btn-secondary btn-sm"
+                  id="nav-logout-btn"
+                >
+                  Logout
+                </button>
+              </>
+            ) : (
+              <>
+                <Link to="/login" className="btn btn-ghost btn-sm" id="nav-login-btn">
+                  Log in
+                </Link>
+                <Link to="/register" className="btn btn-primary btn-sm" id="nav-signup-btn">
+                  Sign up
+                </Link>
+              </>
+            )}
+
+            {/* Mobile Hamburger */}
+            <button
+              className="hamburger"
+              onClick={() => setMobileOpen((o) => !o)}
+              aria-label="Toggle navigation menu"
+              id="mobile-menu-btn"
+            >
+              {mobileOpen ? <CloseIcon /> : <MenuIcon />}
+            </button>
           </div>
         </div>
-      </header>
+      </nav>
 
-      <main className="flex-1 w-full max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
+      {/* ─── Mobile Nav Drawer ─── */}
+      {mobileOpen && (
+        <div className="mobile-nav-drawer open" id="mobile-nav-drawer">
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+            <span className="nav-logo" style={{ fontSize: 18 }}>CryptoSim</span>
+            <button
+              onClick={() => setMobileOpen(false)}
+              className="theme-toggle"
+              aria-label="Close menu"
+            >
+              <CloseIcon />
+            </button>
+          </div>
+
+          {user ? (
+            <>
+              {NAV_LINKS.map(({ to, label }) => (
+                <Link
+                  key={to}
+                  to={to}
+                  className={`mobile-nav-link${isActive(to) ? ' active' : ''}`}
+                >
+                  {label}
+                </Link>
+              ))}
+              <div className="divider" />
+              {wallet && (
+                <div style={{ padding: '8px 16px', fontSize: 13, color: 'var(--color-muted)' }}>
+                  Balance:{' '}
+                  <strong style={{ color: 'var(--color-ink)', fontFamily: 'var(--font-mono)' }}>
+                    ৳{Math.floor(wallet.cashBalanceBDT).toLocaleString()}
+                  </strong>
+                </div>
+              )}
+              <button
+                onClick={handleLogout}
+                className="btn btn-secondary"
+                style={{ marginTop: 8, width: '100%' }}
+              >
+                Logout
+              </button>
+            </>
+          ) : (
+            <>
+              <Link to="/login" className="mobile-nav-link">Log in</Link>
+              <Link to="/register" className="btn btn-primary" style={{ textAlign: 'center', marginTop: 8 }}>
+                Sign up free
+              </Link>
+            </>
+          )}
+        </div>
+      )}
+
+      {/* ─── Main Content ─── */}
+      <main className="app-main">
         <Outlet />
       </main>
     </div>

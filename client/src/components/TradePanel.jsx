@@ -59,33 +59,75 @@ export function TradePanel({ symbol, priceBDT, holdingQuantity = 0, onTradeCompl
   }
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-      <h3 className="text-lg font-semibold text-gray-900 mb-4">Trade {symbol}</h3>
+    <div
+      className="card card-p"
+      style={{ display: 'flex', flexDirection: 'column', gap: 20 }}
+    >
+      {/* Header */}
+      <div>
+        <p className="section-label">Trade</p>
+        <h3
+          className="section-title"
+          style={{ fontSize: 18, marginTop: 4 }}
+        >
+          {symbol}
+        </h3>
+      </div>
 
-      <div className="grid grid-cols-2 gap-2 mb-4">
+      {/* Buy / Sell Tab Toggle */}
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: '1fr 1fr',
+          gap: 8,
+          padding: 4,
+          background: 'var(--color-surface)',
+          borderRadius: 'var(--radius-lg)',
+          border: '1px solid var(--color-hairline)',
+        }}
+      >
         <button
           type="button"
-          onClick={() => setSide('buy')}
-          className={`py-2 rounded-md text-sm font-semibold transition-colors ${
-            side === 'buy' ? 'bg-green-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-          }`}
+          id="trade-buy-tab"
+          onClick={() => { setSide('buy'); setError(null); setSuccessMessage(null); }}
+          style={{
+            padding: '8px 0',
+            borderRadius: 6,
+            border: 'none',
+            fontSize: 14,
+            fontWeight: 700,
+            cursor: 'pointer',
+            transition: 'all 150ms ease',
+            backgroundColor: side === 'buy' ? 'var(--color-up)' : 'transparent',
+            color: side === 'buy' ? '#fff' : 'var(--color-muted)',
+          }}
         >
-          Buy
+          ↑ Buy
         </button>
         <button
           type="button"
-          onClick={() => setSide('sell')}
-          className={`py-2 rounded-md text-sm font-semibold transition-colors ${
-            side === 'sell' ? 'bg-red-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-          }`}
+          id="trade-sell-tab"
+          onClick={() => { setSide('sell'); setError(null); setSuccessMessage(null); }}
+          style={{
+            padding: '8px 0',
+            borderRadius: 6,
+            border: 'none',
+            fontSize: 14,
+            fontWeight: 700,
+            cursor: 'pointer',
+            transition: 'all 150ms ease',
+            backgroundColor: side === 'sell' ? 'var(--color-down)' : 'transparent',
+            color: side === 'sell' ? '#fff' : 'var(--color-muted)',
+          }}
         >
-          Sell
+          ↓ Sell
         </button>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+        {/* Quantity Input */}
         <div>
-          <label htmlFor="trade-quantity" className="block text-sm font-medium text-gray-700 mb-1">
+          <label htmlFor="trade-quantity" className="cs-label">
             Quantity ({symbol})
           </label>
           <input
@@ -95,61 +137,86 @@ export function TradePanel({ symbol, priceBDT, holdingQuantity = 0, onTradeCompl
             step="any"
             value={quantity}
             onChange={(e) => setQuantity(e.target.value)}
-            placeholder="0.00"
-            className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+            placeholder="0.00000"
+            className="cs-input"
+            style={{ fontFamily: 'var(--font-mono)', fontSize: 15 }}
           />
         </div>
 
-        <div className="bg-gray-50 rounded-md p-3 space-y-1 text-sm">
-          <div className="flex justify-between text-gray-500">
-            <span>Live price</span>
-            <span className="text-gray-900 font-medium">{formatBDT(priceBDT)}</span>
+        {/* Order Summary */}
+        <div className="order-summary">
+          <div className="order-row">
+            <span className="label">Live price</span>
+            <span className="value">{formatBDT(priceBDT)}</span>
           </div>
-          <div className="flex justify-between text-gray-500">
-            <span>Subtotal</span>
-            <span className="text-gray-900 font-medium">{formatBDT(estimatedSubtotalBDT)}</span>
+          <div className="order-row">
+            <span className="label">Subtotal</span>
+            <span className="value">{formatBDT(estimatedSubtotalBDT || 0)}</span>
           </div>
-          <div className="flex justify-between text-gray-500">
-            <span>Platform fee ({(TRADE_FEE_RATE * 100).toFixed(1)}%)</span>
-            <span className="text-gray-900 font-medium">
-              {side === 'buy' ? '+' : '-'}{formatBDT(estimatedFeeBDT)}
+          <div className="order-row">
+            <span className="label">Fee ({(TRADE_FEE_RATE * 100).toFixed(1)}%)</span>
+            <span className="value">
+              {side === 'buy' ? '+' : '−'}{formatBDT(estimatedFeeBDT || 0)}
             </span>
           </div>
-          <div className="flex justify-between text-gray-500">
-            <span>Estimated {side === 'buy' ? 'total cost' : 'net proceeds'}</span>
-            <span className="text-gray-900 font-medium">{formatBDT(estimatedTotalBDT)}</span>
+          <div
+            className="order-row"
+            style={{
+              paddingTop: 8,
+              marginTop: 6,
+              borderTop: '1px solid var(--color-hairline)',
+            }}
+          >
+            <span className="label" style={{ fontWeight: 600, color: 'var(--color-body)' }}>
+              {side === 'buy' ? 'Total cost' : 'Net proceeds'}
+            </span>
+            <span className="value" style={{ fontSize: 15, color: 'var(--color-ink)' }}>
+              {formatBDT(estimatedTotalBDT || 0)}
+            </span>
           </div>
+
+          <div className="divider" style={{ margin: '8px 0' }} />
+
           {side === 'buy' && (
-            <div className="flex justify-between text-gray-500">
-              <span>Available cash</span>
-              <span className="text-gray-900 font-medium">{formatBDT(cashBalanceBDT)}</span>
+            <div className="order-row">
+              <span className="label">Available cash</span>
+              <span className="value">{formatBDT(cashBalanceBDT)}</span>
             </div>
           )}
           {side === 'sell' && (
-            <div className="flex justify-between text-gray-500">
-              <span>Available holdings</span>
-              <span className="text-gray-900 font-medium">{holdingQuantity} {symbol}</span>
+            <div className="order-row">
+              <span className="label">Holdings</span>
+              <span className="value" style={{ fontFamily: 'var(--font-mono)' }}>
+                {holdingQuantity} {symbol}
+              </span>
             </div>
           )}
         </div>
 
-        {insufficientBalance && (
-          <p className="text-sm text-red-600">Insufficient balance for this trade.</p>
+        {/* Messages */}
+        {(insufficientBalance || insufficientHoldings) && (
+          <p className="msg-error">
+            {insufficientBalance
+              ? 'Insufficient balance for this trade.'
+              : `You don't hold enough ${symbol} for this trade.`}
+          </p>
         )}
-        {insufficientHoldings && (
-          <p className="text-sm text-red-600">You don't hold enough {symbol} for this trade.</p>
-        )}
-        {error && <p className="text-sm text-red-600">{error}</p>}
-        {successMessage && <p className="text-sm text-green-600">{successMessage}</p>}
+        {error && <p className="msg-error">{error}</p>}
+        {successMessage && <p className="msg-success">{successMessage}</p>}
 
+        {/* Submit Button */}
         <button
           type="submit"
+          id="trade-submit-btn"
           disabled={!canSubmit}
-          className={`w-full py-2.5 rounded-md text-sm font-semibold text-white transition-colors ${
-            side === 'buy' ? 'bg-green-600 hover:bg-green-700' : 'bg-red-600 hover:bg-red-700'
-          } disabled:opacity-50 disabled:cursor-not-allowed`}
+          className={`btn btn-full${side === 'buy' ? ' btn-buy' : ' btn-sell'}`}
+          style={{ fontSize: 15, fontWeight: 700 }}
         >
-          {isSubmitting ? 'Placing order…' : side === 'buy' ? `Buy ${symbol}` : `Sell ${symbol}`}
+          {isSubmitting
+            ? 'Placing order…'
+            : side === 'buy'
+            ? `Buy ${symbol}`
+            : `Sell ${symbol}`}
         </button>
       </form>
     </div>
