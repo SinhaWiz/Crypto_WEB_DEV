@@ -45,8 +45,9 @@ export function TradePanel({ symbol, priceBDT, holdingQuantity = 0, positions = 
   const spotFeeBDT = spotSubtotalBDT * TRADE_FEE_RATE;
   const spotTotalBDT = spotSide === 'buy' ? spotSubtotalBDT + spotFeeBDT : spotSubtotalBDT - spotFeeBDT;
 
+  const positionLeverage = isClosingPosition ? activePosition?.leverage ?? leverage : leverage;
   const positionBaseValueBDT = hasValidQuantity && priceBDT ? parsedQuantity * priceBDT : 0;
-  const positionExposureBDT = positionBaseValueBDT * leverage;
+  const positionExposureBDT = positionBaseValueBDT * positionLeverage;
   const positionFeeBDT = positionExposureBDT * TRADE_FEE_RATE;
   const positionOpenDebitBDT = positionBaseValueBDT + positionFeeBDT;
 
@@ -112,7 +113,7 @@ export function TradePanel({ symbol, priceBDT, holdingQuantity = 0, positions = 
           ? { symbol, quantity: parsedQuantity }
           : isClosingPosition
           ? { symbol, side: positionSide, quantity: parsedQuantity }
-          : { symbol, side: positionSide, quantity: parsedQuantity, leverage };
+          : { symbol, side: positionSide, quantity: parsedQuantity, leverage: positionLeverage };
 
       const result = await action(payload);
 
@@ -126,7 +127,7 @@ export function TradePanel({ symbol, priceBDT, holdingQuantity = 0, positions = 
         );
       } else {
         setSuccessMessage(
-          `Opened ${positionSide} ${symbol} position with ${leverage}x leverage at ${formatBDT(priceBDT)}`
+          `Opened ${positionSide} ${symbol} position with ${positionLeverage}x leverage at ${formatBDT(priceBDT)}`
         );
       }
 
@@ -168,7 +169,7 @@ export function TradePanel({ symbol, priceBDT, holdingQuantity = 0, positions = 
       : [
           { label: 'Live price', value: formatBDT(priceBDT) },
           { label: 'Base value', value: formatBDT(positionBaseValueBDT || 0) },
-          { label: 'Leverage', value: `${leverage}x` },
+          { label: 'Leverage', value: `${positionLeverage}x` },
           { label: 'Exposure', value: formatBDT(positionExposureBDT || 0) },
           { label: 'Fee', value: formatBDT(positionFeeBDT || 0) },
           {
@@ -356,40 +357,62 @@ export function TradePanel({ symbol, priceBDT, holdingQuantity = 0, positions = 
             </button>
           </div>
 
-          <div
-            style={{
-              padding: '12px 14px',
-              borderRadius: 'var(--radius-lg)',
-              border: '1px solid var(--color-hairline)',
-              background: 'var(--color-surface)',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: 10,
-            }}
-          >
-            <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'center' }}>
-              <div>
-                <p className="cs-label" style={{ marginBottom: 4 }}>
-                  Leverage
-                </p>
-                <p style={{ margin: 0, fontSize: 12, color: 'var(--color-muted)' }}>
-                  Multiplies position exposure and price swings up to 10x.
-                </p>
+          {!isClosingPosition ? (
+            <div
+              style={{
+                padding: '12px 14px',
+                borderRadius: 'var(--radius-lg)',
+                border: '1px solid var(--color-hairline)',
+                background: 'var(--color-surface)',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 10,
+              }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'center' }}>
+                <div>
+                  <p className="cs-label" style={{ marginBottom: 4 }}>
+                    Leverage
+                  </p>
+                  <p style={{ margin: 0, fontSize: 12, color: 'var(--color-muted)' }}>
+                    Multiplies position exposure and price swings up to 10x.
+                  </p>
+                </div>
+                <div style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: 16, color: 'var(--color-ink)' }}>
+                  {leverage}x
+                </div>
               </div>
-              <div style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: 16, color: 'var(--color-ink)' }}>
-                {leverage}x
+              <input
+                type="range"
+                min="1"
+                max="10"
+                step="1"
+                value={leverage}
+                onChange={(e) => setLeverage(Number(e.target.value))}
+                style={{ width: '100%' }}
+              />
+            </div>
+          ) : (
+            <div
+              style={{
+                padding: '12px 14px',
+                borderRadius: 'var(--radius-lg)',
+                border: '1px solid var(--color-hairline)',
+                background: 'var(--color-surface)',
+                display: 'grid',
+                gap: 8,
+              }}
+            >
+              <div className="order-row">
+                <span className="label">Position leverage</span>
+                <span className="value">{positionLeverage}x</span>
+              </div>
+              <div className="order-row">
+                <span className="label">Close uses</span>
+                <span className="value">Open position terms</span>
               </div>
             </div>
-            <input
-              type="range"
-              min="1"
-              max="10"
-              step="1"
-              value={leverage}
-              onChange={(e) => setLeverage(Number(e.target.value))}
-              style={{ width: '100%' }}
-            />
-          </div>
+          )}
         </div>
       )}
 
@@ -500,7 +523,7 @@ export function TradePanel({ symbol, priceBDT, holdingQuantity = 0, positions = 
           {tradeMode === 'position' && !isClosingPosition && (
             <div className="order-row">
               <span className="label">Expected leverage swing</span>
-              <span className="value">{leverage}x</span>
+              <span className="value">{positionLeverage}x</span>
             </div>
           )}
         </div>
