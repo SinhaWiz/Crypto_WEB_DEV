@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
-import { getPortfolio, getTransactions } from '../services/tradeService';
+import { getOpenPositions, getPortfolio, getTransactions } from '../services/tradeService';
 
 const ALLOCATION_COLORS = ['#f0b90b', '#0ecb81', '#f6465d', '#3b82f6', '#9945ff', '#0085c3'];
 
@@ -19,6 +19,11 @@ function formatSignedPercent(value) {
   if (value === null || value === undefined || Number.isNaN(value)) return '—';
   const sign = value > 0 ? '+' : '';
   return `${sign}${value.toFixed(2)}%`;
+}
+
+function formatQuantity(value) {
+  if (value === null || value === undefined || Number.isNaN(value)) return '—';
+  return Number(value).toLocaleString(undefined, { maximumFractionDigits: 8 });
 }
 
 function pnlColor(value) {
@@ -55,6 +60,7 @@ function ChartTooltip({ active, payload }) {
 
 export function PortfolioPage() {
   const [portfolio, setPortfolio] = useState(null);
+  const [openPositions, setOpenPositions] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [transactionsPage, setTransactionsPage] = useState(null);
@@ -64,8 +70,11 @@ export function PortfolioPage() {
   const loadPortfolio = useCallback(() => {
     setIsLoading(true);
     setError(null);
-    getPortfolio()
-      .then(setPortfolio)
+    Promise.all([getPortfolio(), getOpenPositions()])
+      .then(([portfolioData, positionsData]) => {
+        setPortfolio(portfolioData);
+        setOpenPositions(positionsData?.positions ?? []);
+      })
       .catch(() => setError('Could not load portfolio'))
       .finally(() => setIsLoading(false));
   }, []);
@@ -135,6 +144,62 @@ export function PortfolioPage() {
             {formatSignedPercent(totalUnrealizedPnlPercent)}
           </p>
         </div>
+      </div>
+
+      {/* ─── Open Positions ─── */}
+      <div className="card" style={{ overflow: 'hidden' }}>
+        <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--color-hairline)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}>
+          <p className="section-title">Open Positions</p>
+          <span className="badge badge-live">{openPositions.length} active</span>
+        </div>
+        {openPositions.length === 0 ? (
+          <div style={{ padding: 32, textAlign: 'center' }}>
+            <p className="text-muted" style={{ fontSize: 14 }}>No leveraged positions are open right now.</p>
+            <p className="text-muted" style={{ fontSize: 12, marginTop: 4 }}>
+              Open a long or short position from a coin page to track it here.
+            </p>
+          </div>
+        ) : (
+          <div style={{ overflowX: 'auto' }}>
+            <table className="cs-table">
+              <thead>
+                <tr>
+                  <th>Coin</th>
+                  <th>Side</th>
+                  <th className="text-right">Qty</th>
+                  <th className="text-right">Lev</th>
+                  <th className="text-right">Entry</th>
+                  <th className="text-right">Current</th>
+                  <th className="text-right">Exposure</th>
+                  <th className="text-right">Unrealized P/L</th>
+                </tr>
+              </thead>
+              <tbody>
+                {openPositions.map((position) => (
+                  <tr key={position.id}>
+                    <td className="font-medium">{position.symbol}</td>
+                    <td>
+                      <span className={`badge ${position.side === 'long' ? 'badge-up' : 'badge-down'}`}>
+                        {position.side.toUpperCase()}
+                      </span>
+                    </td>
+                    <td className="text-right num">{formatQuantity(position.quantity)}</td>
+                    <td className="text-right num">{position.leverage}x</td>
+                    <td className="text-right num">{formatBDT(position.entryPriceBDT)}</td>
+                    <td className="text-right num">{formatBDT(position.currentPriceBDT)}</td>
+                    <td className="text-right num font-medium">{formatBDT(position.exposureBDT)}</td>
+                    <td className="text-right num" style={{ color: pnlColor(position.unrealizedPnlBDT) }}>
+                      {formatSignedBDT(position.unrealizedPnlBDT)}
+                      <span style={{ display: 'block', fontSize: 11, opacity: 0.8 }}>
+                        {formatSignedPercent(position.unrealizedPnlPercent)}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
 
       {/* ─── Holdings ─── */}
@@ -262,6 +327,7 @@ export function PortfolioPage() {
                   <tr>
                     <th>Date</th>
                     <th>Coin</th>
+                    <th>Market</th>
                     <th>Side</th>
                     <th className="text-right">Quantity</th>
                     <th className="text-right">Exec. Price</th>
@@ -271,17 +337,32 @@ export function PortfolioPage() {
                 </thead>
                 <tbody>
                   {transactionsPage.transactions.map((tx) => {
+                    const isPositionTrade = tx.marketType === 'position';
                     const subtotalBDT = tx.executionPriceBDT * tx.quantity;
-                    const totalBDT = tx.side === 'buy' ? subtotalBDT + (tx.feeBDT ?? 0) : subtotalBDT - (tx.feeBDT ?? 0);
+                    const totalBDT = isPositionTrade
+                      ? tx.positionAction === 'open'
+                        ? (tx.marginBDT ?? subtotalBDT) + (tx.feeBDT ?? 0)
+                        : (tx.marginBDT ?? subtotalBDT) + (tx.pnlBDT ?? 0) - (tx.feeBDT ?? 0)
+                      : tx.side === 'buy'
+                      ? subtotalBDT + (tx.feeBDT ?? 0)
+                      : subtotalBDT - (tx.feeBDT ?? 0);
+                    const sideLabel = isPositionTrade
+                      ? `${(tx.positionSide ?? '').toUpperCase()} ${(tx.positionAction ?? '').toUpperCase()}`.trim()
+                      : tx.side.toUpperCase();
                     return (
                       <tr key={tx._id}>
                         <td style={{ fontSize: 12, color: 'var(--color-muted)' }}>{formatDate(tx.createdAt)}</td>
                         <td className="font-medium">{tx.symbol}</td>
                         <td>
+                          <span className={`badge ${isPositionTrade ? 'badge-live' : 'badge-up'}`}>
+                            {isPositionTrade ? `POSITION ${tx.leverage ?? ''}x`.trim() : 'SPOT'}
+                          </span>
+                        </td>
+                        <td>
                           <span
                             className={`badge ${tx.side === 'buy' ? 'badge-up' : 'badge-down'}`}
                           >
-                            {tx.side.toUpperCase()}
+                            {sideLabel}
                           </span>
                         </td>
                         <td className="text-right num">{tx.quantity}</td>
