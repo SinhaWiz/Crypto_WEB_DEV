@@ -14,6 +14,16 @@ const ACHIEVEMENT_ICONS = {
   FIVE_WINS: '🔮',
   WALLET_MILESTONE: '💰',
   WINNING_STREAK: '🔥',
+  TEN_TRADES: '📈',
+  TWENTY_TRADES: '🏆',
+  FIRST_SELL: '💸',
+  DIVERSIFIED: '🌈',
+  FULL_PORTFOLIO: '🃏',
+  TEN_WINS: '🧠',
+  BIG_WINNER: '🎰',
+  TRIPLE_UP: '🚀',
+  POINTS_COLLECTOR: '⭐',
+  STREAK_MASTER: '🔥🔥',
 };
 
 export function AchievementsPage() {
