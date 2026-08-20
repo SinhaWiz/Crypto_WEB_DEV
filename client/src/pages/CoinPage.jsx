@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { getCoin, getCoinHistory } from '../services/coinsService';
-import { getPortfolio } from '../services/tradeService';
+import { getOpenPositions, getPortfolio } from '../services/tradeService';
 import { useMarketPrices } from '../hooks/useMarketPrices';
 import { TradePanel } from '../components/TradePanel';
 import {
@@ -61,17 +61,19 @@ export function CoinPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [holdingQuantity, setHoldingQuantity] = useState(0);
+  const [openPositions, setOpenPositions] = useState([]);
 
-  const refreshHolding = useCallback(() => {
-    getPortfolio()
-      .then((data) => {
-        const holding = data.holdings.find((h) => h.symbol === normalizedSymbol);
+  const refreshTradeState = useCallback(() => {
+    Promise.all([getPortfolio(), getOpenPositions()])
+      .then(([portfolioData, positionData]) => {
+        const holding = portfolioData.holdings.find((h) => h.symbol === normalizedSymbol);
         setHoldingQuantity(holding?.quantity ?? 0);
+        setOpenPositions((positionData?.positions ?? []).filter((position) => position.symbol === normalizedSymbol));
       })
       .catch(() => {});
   }, [normalizedSymbol]);
 
-  useEffect(() => { refreshHolding(); }, [refreshHolding]);
+  useEffect(() => { refreshTradeState(); }, [refreshTradeState]);
 
   useEffect(() => {
     let cancelled = false;
@@ -127,7 +129,7 @@ export function CoinPage() {
 
   if (error) {
     return (
-      <div>
+          <div>
         <div className="msg-error" style={{ marginBottom: 16 }}>{error}</div>
         <button className="btn btn-secondary btn-sm" onClick={() => navigate('/market')}>
           ← Back to Market
@@ -291,7 +293,8 @@ export function CoinPage() {
           symbol={normalizedSymbol}
           priceBDT={liveCoin?.priceBDT}
           holdingQuantity={holdingQuantity}
-          onTradeComplete={refreshHolding}
+          positions={openPositions}
+          onTradeComplete={refreshTradeState}
         />
       </div>
     </div>
