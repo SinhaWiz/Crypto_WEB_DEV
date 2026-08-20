@@ -11,6 +11,7 @@ import userRoutes from './routes/userRoutes.js';
 import walletRoutes from './routes/walletRoutes.js';
 import coinRoutes from './routes/coinRoutes.js';
 import tradeRoutes from './routes/tradeRoutes.js';
+import positionRoutes from './routes/positionRoutes.js';
 import portfolioRoutes from './routes/portfolioRoutes.js';
 import transactionRoutes from './routes/transactionRoutes.js';
 import predictionRoutes from './routes/predictionRoutes.js';
@@ -42,6 +43,7 @@ export function createApp() {
   app.use('/api/wallet', walletRoutes);
   app.use('/api/coins', coinRoutes);
   app.use('/api/trades', tradeRoutes);
+  app.use('/api/positions', positionRoutes);
   app.use('/api/portfolio', portfolioRoutes);
   app.use('/api/transactions', transactionRoutes);
   app.use('/api/predictions', predictionRoutes);

@@ -26,7 +26,7 @@ function assertValidQuantity(quantity) {
  * own simulation session — trades always execute against the acting
  * user's own simulated price path, never a shared/global price.
  */
-async function resolveExecutionPrice(userId, symbol) {
+export async function resolveExecutionPrice(userId, symbol) {
   const session = await SimulationSession.findOne({ userId, status: 'active' });
   if (!session) {
     throw new AppError('No active simulation session for this user', 409, ERROR_CODES.CONFLICT);

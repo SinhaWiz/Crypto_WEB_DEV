@@ -36,6 +36,37 @@ const transactionSchema = new Schema(
       default: 0,
       min: 0,
     },
+    marketType: {
+      type: String,
+      required: true,
+      enum: ['spot', 'position'],
+      default: 'spot',
+    },
+    positionSide: {
+      type: String,
+      enum: ['long', 'short'],
+      default: null,
+    },
+    positionAction: {
+      type: String,
+      enum: ['open', 'close'],
+      default: null,
+    },
+    leverage: {
+      type: Number,
+      default: null,
+      min: 1,
+      max: 10,
+    },
+    marginBDT: {
+      type: Number,
+      default: null,
+      min: 0,
+    },
+    pnlBDT: {
+      type: Number,
+      default: null,
+    },
   },
   { timestamps: true }
 );
