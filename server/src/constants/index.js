@@ -1,5 +1,11 @@
 export const SUPPORTED_SYMBOLS = ['BTC', 'ETH', 'SOL', 'DOGE', 'XRP', 'BNB'];
 
+export const MIN_LEVERAGE = 1;
+
+export const MAX_LEVERAGE = 10;
+
+export const POSITION_SIDES = ['long', 'short'];
+
 export const STARTING_BALANCE_BDT = 100000;
 
 export const STARTING_VIRTUAL_POINTS = 100;
