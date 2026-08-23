@@ -107,6 +107,32 @@
   --shadow-elevated: 0 4px 16px 0 rgba(0, 0, 0, 0.08);
 }
 
+/* ---- Tailwind semantic token bridge ----
+   Components dropped into /components/ui (shadcn-style) are written
+   against these semantic names (bg-primary, text-foreground, bg-card,
+   border-border, ...). They don't exist as Tailwind utilities unless
+   declared in an @theme block, so this aliases them to the design
+   tokens above — keeps one source of truth and means new /components/ui
+   drops pick up the app's theme (and the light-mode override) for free. */
+@theme inline {
+  --color-background: var(--color-canvas);
+  --color-foreground: var(--color-ink);
+  --color-card: var(--color-surface-card);
+  --color-muted: var(--color-surface);
+  --color-muted-foreground: var(--color-muted);
+  --color-border: var(--color-hairline);
+  --color-input: var(--color-hairline);
+  --color-primary: var(--color-primary);
+  --color-primary-foreground: var(--color-on-primary);
+  --color-secondary: var(--color-surface-elevated);
+  --color-secondary-foreground: var(--color-ink);
+  --color-accent: var(--color-surface-elevated);
+  --color-accent-foreground: var(--color-ink);
+  --color-destructive: var(--color-down);
+  --color-destructive-foreground: #ffffff;
+  --color-ring: var(--color-primary);
+}
+
 /* ---- Reset & Base ---- */
 *, *::before, *::after {
   box-sizing: border-box;
@@ -737,6 +763,11 @@ body {
   to { opacity: 1; transform: translateY(0); }
 }
 
+@keyframes scroll-cue {
+  0%, 100% { transform: translateX(-50%) translateY(0); opacity: 0.6; }
+  50% { transform: translateX(-50%) translateY(6px); opacity: 1; }
+}
+
 .flash-up { animation: flash-up 0.6s ease-out forwards; }
 .flash-down { animation: flash-down 0.6s ease-out forwards; }
 
@@ -753,6 +784,19 @@ body {
   display: flex;
   flex-direction: column;
   gap: 24px;
+}
+
+/* Breaks a section out of .app-main's 1280px max-width so it can span the
+   full viewport, even though it's nested inside the centered content column.
+   Plain negative margin only cancels padding, not max-width — on viewports
+   wider than ~1328px that left visible dead space at the screen edges. */
+.full-bleed {
+  width: 100vw;
+  position: relative;
+  left: 50%;
+  right: 50%;
+  margin-left: -50vw;
+  margin-right: -50vw;
 }
 
 /* ---- Hero Band ---- */

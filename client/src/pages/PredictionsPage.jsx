@@ -3,6 +3,12 @@ import { useAuth } from '../features/auth/AuthContext';
 import { SUPPORTED_SYMBOLS } from '../lib/constants';
 import { getCoin } from '../services/coinsService';
 import { placePrediction, getPredictionHistory } from '../services/predictionService';
+import { PredictionMarket } from '../components/ui/be-ui-prediction-market';
+
+const PREDICTION_OUTCOMES = [
+  { id: 'up', label: 'Up', price: 0.5 },
+  { id: 'down', label: 'Down', price: 0.5 },
+];
 
 const DURATION_PRESETS = [
   { label: '15 sec', minutes: 0.25 },
@@ -33,13 +39,11 @@ function ResultBadge({ result }) {
 export function PredictionsPage() {
   const { wallet, refreshWallet } = useAuth();
   const [symbol, setSymbol] = useState(SUPPORTED_SYMBOLS[0]);
+  const [mode, setMode] = useState('buy');
   const [direction, setDirection] = useState('up');
   const [pointsStaked, setPointsStaked] = useState('');
   const [durationMinutes, setDurationMinutes] = useState(DURATION_PRESETS[0].minutes);
   const [currentPriceBDT, setCurrentPriceBDT] = useState(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [error, setError] = useState(null);
-  const [successMessage, setSuccessMessage] = useState(null);
 
   const [historyPage, setHistoryPage] = useState(null);
   const [historyPageNumber, setHistoryPageNumber] = useState(1);
@@ -63,32 +67,23 @@ export function PredictionsPage() {
     return () => { cancelled = true; };
   }, [symbol]);
 
-  const parsedPoints = Number(pointsStaked);
-  const hasValidPoints = pointsStaked !== '' && Number.isFinite(parsedPoints) && parsedPoints > 0;
   const availablePoints = wallet?.virtualPoints ?? 0;
-  const insufficientPoints = hasValidPoints && parsedPoints > availablePoints;
-  const canSubmit = hasValidPoints && !insufficientPoints && !isSubmitting;
+  const selectedPreset = DURATION_PRESETS.find((p) => p.minutes === durationMinutes) ?? DURATION_PRESETS[0];
 
-  async function handleSubmit(e) {
-    e.preventDefault();
-    if (!canSubmit) return;
-    setIsSubmitting(true);
-    setError(null);
-    setSuccessMessage(null);
-    try {
-      await placePrediction({ symbol, direction, pointsStaked: parsedPoints, durationMinutes });
-      setSuccessMessage(
-        `✓ Prediction placed: ${symbol} will go ${direction === 'up' ? '↑ UP' : '↓ DOWN'} within ${durationMinutes} min.`
-      );
-      setPointsStaked('');
-      await refreshWallet();
-      loadHistory();
-    } catch (err) {
-      setError(err?.message || 'Could not place prediction. Please try again.');
-    } finally {
-      setIsSubmitting(false);
+  const handleTrade = useCallback(async (order, quote) => {
+    if (order.mode !== 'buy') {
+      throw new Error('Selling is not available for predictions.');
     }
-  }
+    await placePrediction({
+      symbol,
+      direction: order.outcomeId,
+      pointsStaked: quote.amount,
+      durationMinutes,
+    });
+    setPointsStaked('');
+    await refreshWallet();
+    loadHistory();
+  }, [symbol, durationMinutes, refreshWallet, loadHistory]);
 
   return (
     <div className="page-stack">
@@ -102,10 +97,8 @@ export function PredictionsPage() {
 
       <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) 280px', gap: 20, alignItems: 'start' }}>
         {/* ─── Prediction Form ─── */}
-        <div className="card card-p">
-          <h2 className="section-title" style={{ marginBottom: 20, fontSize: 18 }}>Place a Prediction</h2>
-
-          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16, alignItems: 'center' }}>
+          <div className="card card-p" style={{ width: '100%', maxWidth: 400 }}>
             {/* Coin + current price */}
             <div>
               <label htmlFor="prediction-symbol" className="cs-label">Coin</label>
@@ -129,61 +122,8 @@ export function PredictionsPage() {
               )}
             </div>
 
-            {/* Direction */}
-            <div>
-              <span className="cs-label">Direction</span>
-              <div
-                style={{
-                  display: 'grid',
-                  gridTemplateColumns: '1fr 1fr',
-                  gap: 10,
-                  padding: 4,
-                  background: 'var(--color-surface)',
-                  borderRadius: 'var(--radius-lg)',
-                  border: '1px solid var(--color-hairline)',
-                }}
-              >
-                <button
-                  type="button"
-                  id="pred-dir-up"
-                  onClick={() => setDirection('up')}
-                  style={{
-                    padding: '12px 0',
-                    borderRadius: 6,
-                    border: 'none',
-                    fontSize: 15,
-                    fontWeight: 700,
-                    cursor: 'pointer',
-                    transition: 'all 150ms ease',
-                    backgroundColor: direction === 'up' ? 'var(--color-up)' : 'transparent',
-                    color: direction === 'up' ? '#fff' : 'var(--color-muted)',
-                  }}
-                >
-                  ▲ Up
-                </button>
-                <button
-                  type="button"
-                  id="pred-dir-down"
-                  onClick={() => setDirection('down')}
-                  style={{
-                    padding: '12px 0',
-                    borderRadius: 6,
-                    border: 'none',
-                    fontSize: 15,
-                    fontWeight: 700,
-                    cursor: 'pointer',
-                    transition: 'all 150ms ease',
-                    backgroundColor: direction === 'down' ? 'var(--color-down)' : 'transparent',
-                    color: direction === 'down' ? '#fff' : 'var(--color-muted)',
-                  }}
-                >
-                  ▼ Down
-                </button>
-              </div>
-            </div>
-
             {/* Duration presets */}
-            <div>
+            <div style={{ marginTop: 16 }}>
               <span className="cs-label">Closes in</span>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8 }}>
                 {DURATION_PRESETS.map((preset) => (
@@ -209,51 +149,23 @@ export function PredictionsPage() {
                 ))}
               </div>
             </div>
+          </div>
 
-            {/* Points to stake */}
-            <div>
-              <label htmlFor="prediction-points" className="cs-label">
-                Points to stake
-              </label>
-              <input
-                id="prediction-points"
-                type="number"
-                min="1"
-                step="1"
-                value={pointsStaked}
-                onChange={(e) => { setPointsStaked(e.target.value); setError(null); setSuccessMessage(null); }}
-                placeholder="0"
-                className="cs-input"
-                style={{ fontFamily: 'var(--font-mono)', fontSize: 16 }}
-              />
-              <p style={{ fontSize: 12, color: 'var(--color-muted)', marginTop: 6 }}>
-                Available:{' '}
-                <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 600, color: 'var(--color-ink)' }}>
-                  {availablePoints} pts
-                </span>
-                {hasValidPoints && !insufficientPoints && (
-                  <span style={{ marginLeft: 8, color: 'var(--color-up)' }}>
-                    → Win: {parsedPoints * 2} pts
-                  </span>
-                )}
-              </p>
-            </div>
-
-            {insufficientPoints && (
-              <p className="msg-error">You don't have enough points for this stake.</p>
-            )}
-            {error && <p className="msg-error">{error}</p>}
-            {successMessage && <p className="msg-success">{successMessage}</p>}
-
-            <button
-              type="submit"
-              id="place-prediction-btn"
-              disabled={!canSubmit}
-              className="btn btn-primary btn-full"
-            >
-              {isSubmitting ? 'Placing…' : 'Place Prediction'}
-            </button>
-          </form>
+          <PredictionMarket
+            outcomes={PREDICTION_OUTCOMES}
+            value={{ mode, outcomeId: direction, amount: pointsStaked }}
+            onValueChange={(next) => {
+              setMode(next.mode);
+              setDirection(next.outcomeId);
+              setPointsStaked(next.amount);
+            }}
+            onTrade={handleTrade}
+            balance={availablePoints}
+            positions={{ up: 0, down: 0 }}
+            quickAmounts={[10, 50, 100, 500]}
+            minTrade={1}
+            orderTypeLabel={selectedPreset.label}
+          />
         </div>
 
         {/* ─── Info Card ─── */}

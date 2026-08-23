@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { useAuth } from '../features/auth/AuthContext';
 import { POINTS_EXCHANGE_RATE_BDT, TRADE_FEE_RATE } from '../lib/constants';
 import { buyPoints } from '../services/walletService';
+import { SlideButton } from '../components/ui/slide-button';
 
 function formatBDT(value) {
   if (value === null || value === undefined || Number.isNaN(value)) return '—';
@@ -22,9 +23,7 @@ export function WalletPage() {
   const insufficientCash = hasValidPoints && costBDT > availableCashBDT;
   const canSubmit = hasValidPoints && !insufficientCash && !isSubmitting;
 
-  async function handleSubmit(e) {
-    e.preventDefault();
-    if (!canSubmit) return;
+  const confirmPurchase = useCallback(async () => {
     setIsSubmitting(true);
     setError(null);
     setSuccessMessage(null);
@@ -35,10 +34,17 @@ export function WalletPage() {
       await refreshWallet();
     } catch (err) {
       setError(err?.message || 'Could not buy points. Please try again.');
+      throw err;
     } finally {
       setIsSubmitting(false);
     }
-  }
+  }, [parsedPoints, costBDT, refreshWallet]);
+
+  const disabledReason = !hasValidPoints
+    ? 'Enter points to buy'
+    : insufficientCash
+    ? 'Insufficient cash balance'
+    : null;
 
   return (
     <div className="page-stack">
@@ -71,7 +77,7 @@ export function WalletPage() {
         <div className="card card-p">
           <h2 className="section-title" style={{ marginBottom: 20, fontSize: 18 }}>Buy Virtual Points</h2>
 
-          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
             <div>
               <label htmlFor="points-to-buy" className="cs-label">
                 Points to buy
@@ -116,22 +122,15 @@ export function WalletPage() {
             {error && <p className="msg-error">{error}</p>}
             {successMessage && <p className="msg-success">{successMessage}</p>}
 
-            <button
-              type="submit"
-              id="buy-points-btn"
+            <SlideButton
+              label={disabledReason ?? 'Slide to buy points'}
+              successLabel="Bought"
+              errorLabel="Failed"
               disabled={!canSubmit}
-              className="btn btn-primary btn-full"
-            >
-              {isSubmitting ? (
-                <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <span className="spinner" style={{ width: 16, height: 16 }} />
-                  Buying…
-                </span>
-              ) : (
-                'Buy Points'
-              )}
-            </button>
-          </form>
+              onConfirm={confirmPurchase}
+              className="text-base font-semibold"
+            />
+          </div>
         </div>
 
         {/* ─── Info Card ─── */}

@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { useAuth } from '../features/auth/AuthContext';
 import { TRADE_FEE_RATE } from '../lib/constants';
 import { buyCoin, sellCoin, openPosition, closePosition } from '../services/tradeService';
+import { SlideButton } from './ui/slide-button';
 
 function formatBDT(value) {
   if (value === null || value === undefined || Number.isNaN(value)) return '—';
@@ -90,10 +91,7 @@ export function TradePanel({ symbol, priceBDT, holdingQuantity = 0, positions = 
       ? `Close ${capitalize(positionSide)}`
       : `Open ${capitalize(positionSide)}`;
 
-  async function handleSubmit(e) {
-    e.preventDefault();
-    if (!canSubmit) return;
-
+  const confirmTrade = useCallback(async () => {
     setIsSubmitting(true);
     setError(null);
     setSuccessMessage(null);
@@ -136,10 +134,36 @@ export function TradePanel({ symbol, priceBDT, holdingQuantity = 0, positions = 
       onTradeComplete?.(result);
     } catch (err) {
       setError(err?.message || 'Trade failed. Please try again.');
+      throw err;
     } finally {
       setIsSubmitting(false);
     }
-  }
+  }, [
+    tradeMode,
+    spotSide,
+    isClosingPosition,
+    symbol,
+    parsedQuantity,
+    positionSide,
+    positionLeverage,
+    priceBDT,
+    refreshWallet,
+    onTradeComplete,
+  ]);
+
+  const disabledReason = !priceBDT
+    ? 'Waiting for price…'
+    : !hasValidQuantity
+    ? `Enter a ${tradeMode === 'spot' ? 'quantity' : 'position size'}`
+    : insufficientBalance
+    ? tradeMode === 'spot'
+      ? 'Insufficient balance'
+      : 'Insufficient balance for margin'
+    : insufficientHoldings
+    ? `Not enough ${symbol}`
+    : insufficientPositionQuantity
+    ? 'Exceeds open position size'
+    : null;
 
   const orderSummaryRows =
     tradeMode === 'spot'
@@ -416,7 +440,7 @@ export function TradePanel({ symbol, priceBDT, holdingQuantity = 0, positions = 
         </div>
       )}
 
-      <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
         <div>
           <label htmlFor="trade-quantity" className="cs-label">
             {tradeMode === 'spot' ? `Quantity (${symbol})` : `Position size (${symbol})`}
@@ -560,16 +584,23 @@ export function TradePanel({ symbol, priceBDT, holdingQuantity = 0, positions = 
         {error && <p className="msg-error">{error}</p>}
         {successMessage && <p className="msg-success">{successMessage}</p>}
 
-        <button
-          type="submit"
-          id="trade-submit-btn"
+        <SlideButton
+          label={disabledReason ?? `Slide to ${modeActionLabel} ${symbol}`}
+          successLabel={
+            tradeMode === 'spot'
+              ? spotSide === 'buy'
+                ? 'Bought'
+                : 'Sold'
+              : isClosingPosition
+              ? 'Closed'
+              : 'Opened'
+          }
+          errorLabel="Failed"
           disabled={!canSubmit}
-          className={`btn btn-full${tradeMode === 'spot' && spotSide === 'buy' ? ' btn-buy' : tradeMode === 'spot' ? ' btn-sell' : ''}`}
-          style={{ fontSize: 15, fontWeight: 700 }}
-        >
-          {isSubmitting ? 'Placing order…' : `${modeActionLabel} ${symbol}`}
-        </button>
-      </form>
+          onConfirm={confirmTrade}
+          className="text-base font-semibold"
+        />
+      </div>
     </div>
   );
 }
