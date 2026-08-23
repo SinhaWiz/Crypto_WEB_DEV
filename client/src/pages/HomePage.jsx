@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { useAuth } from '../features/auth/AuthContext';
+import NeuralBackground from '../components/ui/flow-field-background';
 
 const FEATURES = [
   {
@@ -36,13 +37,24 @@ export function HomePage() {
       {/* ─── Hero Band ─── */}
       <section
         style={{
+          position: 'relative',
           backgroundColor: '#000000',
           color: '#ffffff',
           padding: '80px 24px',
           textAlign: 'center',
+          overflow: 'hidden',
         }}
       >
-        <div style={{ maxWidth: 720, margin: '0 auto' }}>
+        <div style={{ position: 'absolute', inset: 0 }}>
+          <NeuralBackground
+            color="#fcd535"
+            trailOpacity={0.12}
+            particleCount={280}
+            speed={0.6}
+          />
+        </div>
+
+        <div style={{ position: 'relative', maxWidth: 720, margin: '0 auto' }}>
           {/* Eyebrow */}
           <div
             className="badge badge-yellow"
