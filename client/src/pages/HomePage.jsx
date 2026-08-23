@@ -32,12 +32,16 @@ export function HomePage() {
   const { user } = useAuth();
 
   return (
-    <div style={{ margin: '0 -24px' }}>
+    <div className="full-bleed">
 
-      {/* ─── Hero Band ─── */}
+      {/* ─── Hero Band (full screen) ─── */}
       <section
         style={{
           position: 'relative',
+          minHeight: 'calc(100vh - 64px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
           backgroundColor: '#000000',
           color: '#ffffff',
           padding: '80px 24px',
@@ -48,8 +52,8 @@ export function HomePage() {
         <div style={{ position: 'absolute', inset: 0 }}>
           <NeuralBackground
             color="#fcd535"
-            trailOpacity={0.12}
-            particleCount={280}
+            trailOpacity={0.1}
+            particleCount={400}
             speed={0.6}
           />
         </div>
@@ -115,6 +119,20 @@ export function HomePage() {
             )}
           </div>
         </div>
+
+        <svg
+          width="20"
+          height="20"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="#929aa5"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          style={{ position: 'absolute', bottom: 28, left: '50%', transform: 'translateX(-50%)', animation: 'scroll-cue 1.8s ease-in-out infinite' }}
+        >
+          <polyline points="6 9 12 15 18 9" />
+        </svg>
       </section>
 
       {/* ─── Stats Band ─── */}
