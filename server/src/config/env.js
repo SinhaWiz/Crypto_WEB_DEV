@@ -12,6 +12,8 @@ const envSchema = z.object({
   MARKET_DATA_API_KEY: z.string().optional(),
   PRICE_TICK_INTERVAL_MS: z.coerce.number().default(3000),
   HISTORICAL_REFRESH_CRON: z.string().optional(),
+  AMBIENT_EVENT_CHECK_MS: z.coerce.number().default(60000),
+  AMBIENT_EVENT_PROBABILITY: z.coerce.number().default(0.08),
 });
 
 const parsed = envSchema.safeParse(process.env);

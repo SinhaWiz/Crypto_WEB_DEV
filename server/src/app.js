@@ -18,6 +18,7 @@ import predictionRoutes from './routes/predictionRoutes.js';
 import achievementRoutes from './routes/achievementRoutes.js';
 import leaderboardRoutes from './routes/leaderboardRoutes.js';
 import learningRoutes from './routes/learningRoutes.js';
+import eventRoutes from './routes/eventRoutes.js';
 
 export function createApp() {
   const app = express();
@@ -50,6 +51,7 @@ export function createApp() {
   app.use('/api/achievements', achievementRoutes);
   app.use('/api/leaderboard', leaderboardRoutes);
   app.use('/api/learning', learningRoutes);
+  app.use('/api/events', eventRoutes);
 
   app.use((req, res) => {
     res.status(404).json({

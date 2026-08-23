@@ -11,6 +11,7 @@ import { HomePage } from './pages/HomePage';
 import { PortfolioPage } from './pages/PortfolioPage';
 import { WalletPage } from './pages/WalletPage';
 import { PredictionsPage } from './pages/PredictionsPage';
+import { EventsPage } from './pages/EventsPage';
 import { LeaderboardPage } from './pages/LeaderboardPage';
 import { AchievementsPage } from './pages/AchievementsPage';
 import { LearningPage } from './pages/LearningPage';
@@ -70,6 +71,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <PredictionsPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="events"
+            element={
+              <ProtectedRoute>
+                <EventsPage />
               </ProtectedRoute>
             }
           />
