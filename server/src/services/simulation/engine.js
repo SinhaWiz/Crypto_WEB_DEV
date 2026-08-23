@@ -2,6 +2,7 @@ import crypto from 'crypto';
 import { SUPPORTED_SYMBOLS, BDT_PER_USD } from '../../constants/index.js';
 import { PriceHistory } from '../../models/PriceHistory.js';
 import { SimulatedPriceTick } from '../../models/SimulatedPriceTick.js';
+import { seededNormal } from './seededRandom.js';
 
 // Fallback USD prices if DB has no history yet
 const FALLBACK_USD_ANCHORS = {
@@ -21,23 +22,6 @@ const DIFFICULTY_PRESETS = {
 
 function normalizeDifficulty(difficulty) {
   return DIFFICULTY_PRESETS[difficulty] ? difficulty : 'beginner';
-}
-
-/**
- * Deterministic seeded unit value in [0,1] using SHA-256.
- */
-function seededUnit(seed) {
-  const hash = crypto.createHash('sha256').update(seed).digest();
-  return hash.readUInt32BE(0) / 0xffffffff;
-}
-
-/**
- * Standard normal sample via Box-Muller from a seeded hash.
- */
-function seededNormal(seed) {
-  const u1 = Math.max(seededUnit(`${seed}:a`), Number.EPSILON);
-  const u2 = Math.max(seededUnit(`${seed}:b`), Number.EPSILON);
-  return Math.sqrt(-2 * Math.log(u1)) * Math.cos(2 * Math.PI * u2);
 }
 
 /**

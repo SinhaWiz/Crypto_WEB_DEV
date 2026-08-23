@@ -1,38 +1,37 @@
 import { coinGeckoProvider } from './marketData/coinGeckoProvider.js';
 import { PriceHistory } from '../models/PriceHistory.js';
 import { SUPPORTED_SYMBOLS } from '../constants/index.js';
+import { seededUnit } from './simulation/seededRandom.js';
 
 const PROVIDER_NAME = 'coingecko';
 const DEFAULT_INTERVAL = '1d';
 
 /**
- * Sync latest prices from CoinGecko to the database
+ * Sync latest prices from CoinGecko to the database.
+ *
+ * Only `close` (and volume/marketCap/percentChange24h) come from the real
+ * CoinGecko snapshot — a single batched call. `open`/`high`/`low` are a small
+ * seeded jitter around that real price rather than a second, per-symbol OHLC
+ * fetch: it avoids 6 extra correlated CoinGecko calls every run and keeps
+ * each coin's candle shape independent instead of tracking the same
+ * real-market move together.
  */
 export const syncLatestPrices = async () => {
-  const [snapshotData, ohlcDataPromises] = await Promise.all([
-    coinGeckoProvider.fetchLatest(SUPPORTED_SYMBOLS),
-    Promise.all(SUPPORTED_SYMBOLS.map(symbol => coinGeckoProvider.fetchHistory(symbol, DEFAULT_INTERVAL, 1).then(history => ({ symbol, history }))))
-  ]);
-
+  const snapshotData = await coinGeckoProvider.fetchLatest(SUPPORTED_SYMBOLS);
   const timestamp = new Date();
-  
+
   const records = snapshotData.map((snapshot) => {
-    // Find matching OHLC for this symbol
-    const symbolOhlc = ohlcDataPromises.find(d => d.symbol === snapshot.symbol);
-    
-    // CoinGecko returns history chronologically, so the last item is the most recent
-    const latestCandle = symbolOhlc && symbolOhlc.history.length > 0 
-      ? symbolOhlc.history[symbolOhlc.history.length - 1] 
-      : null;
+    const jitter = seededUnit(`hourly-ohlc:${snapshot.symbol}:${timestamp.getTime()}`);
+    const range = snapshot.price * (0.001 + jitter * 0.004); // ~0.1%-0.5% synthetic intra-candle range
 
     return {
       symbol: snapshot.symbol,
       provider: PROVIDER_NAME,
       interval: DEFAULT_INTERVAL,
       timestamp,
-      open: latestCandle ? latestCandle.open : snapshot.price,
-      high: latestCandle ? latestCandle.high : snapshot.price,
-      low: latestCandle ? latestCandle.low : snapshot.price,
+      open: snapshot.price,
+      high: snapshot.price + range,
+      low: Math.max(0, snapshot.price - range),
       close: snapshot.price, // Close price is the exact current price
       volume: snapshot.volume24h,
       marketCap: snapshot.marketCap,
@@ -43,7 +42,7 @@ export const syncLatestPrices = async () => {
   if (records.length > 0) {
     await PriceHistory.insertMany(records);
   }
-  
+
   return records;
 };
 
