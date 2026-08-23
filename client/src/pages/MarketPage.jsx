@@ -2,15 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { listCoins } from '../services/coinsService';
 import { useMarketPrices } from '../hooks/useMarketPrices';
-
-const COIN_META = {
-  BTC: { symbol: '₿', name: 'Bitcoin' },
-  ETH: { symbol: 'Ξ', name: 'Ethereum' },
-  SOL: { symbol: '◎', name: 'Solana' },
-  DOGE: { symbol: 'Ð', name: 'Dogecoin' },
-  XRP: { symbol: '✕', name: 'XRP' },
-  BNB: { symbol: '⬢', name: 'BNB' },
-};
+import { COIN_META } from '../lib/coinMeta';
 
 function formatBDT(value) {
   if (value === null || value === undefined) return '—';
@@ -91,7 +83,7 @@ export function MarketPage() {
         {prices.map((coin) => {
           const isPositive = (coin.percentChange24h ?? 0) >= 0;
           const flash = flashes[coin.symbol];
-          const meta = COIN_META[coin.symbol] ?? { symbol: coin.symbol[0], name: coin.symbol };
+          const meta = COIN_META[coin.symbol] ?? { glyph: coin.symbol[0], name: coin.symbol };
 
           return (
             <div
@@ -114,7 +106,7 @@ export function MarketPage() {
               {/* Coin name */}
               <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                 <div className={`coin-icon coin-${coin.symbol}`}>
-                  {meta.symbol}
+                  {meta.glyph}
                 </div>
                 <div>
                   <p style={{ fontWeight: 700, color: 'var(--color-ink)', fontSize: 15, margin: 0 }}>

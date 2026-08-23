@@ -1,9 +1,12 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useAuth } from '../features/auth/AuthContext';
 import { SUPPORTED_SYMBOLS } from '../lib/constants';
-import { getCoin } from '../services/coinsService';
+import { COIN_META } from '../lib/coinMeta';
+import { listCoins, getCoinHistory } from '../services/coinsService';
 import { placePrediction, getPredictionHistory } from '../services/predictionService';
+import { useMarketPrices } from '../hooks/useMarketPrices';
 import { PredictionMarket } from '../components/ui/be-ui-prediction-market';
+import { MarketWatchlist } from '../components/ui/market-watchlist';
 
 const PREDICTION_OUTCOMES = [
   { id: 'up', label: 'Up', price: 0.5 },
@@ -43,7 +46,6 @@ export function PredictionsPage() {
   const [direction, setDirection] = useState('up');
   const [pointsStaked, setPointsStaked] = useState('');
   const [durationMinutes, setDurationMinutes] = useState(DURATION_PRESETS[0].minutes);
-  const [currentPriceBDT, setCurrentPriceBDT] = useState(null);
 
   const [historyPage, setHistoryPage] = useState(null);
   const [historyPageNumber, setHistoryPageNumber] = useState(1);
@@ -59,13 +61,32 @@ export function PredictionsPage() {
 
   useEffect(() => { loadHistory(); }, [loadHistory]);
 
+  const [initialCoins, setInitialCoins] = useState([]);
   useEffect(() => {
     let cancelled = false;
-    getCoin(symbol)
-      .then((coin) => { if (!cancelled) setCurrentPriceBDT(coin.priceBDT); })
-      .catch(() => { if (!cancelled) setCurrentPriceBDT(null); });
+    listCoins().then((coins) => { if (!cancelled) setInitialCoins(coins); }).catch(() => {});
     return () => { cancelled = true; };
-  }, [symbol]);
+  }, []);
+
+  const [chartHistory, setChartHistory] = useState({});
+  useEffect(() => {
+    let cancelled = false;
+    Promise.all(
+      SUPPORTED_SYMBOLS.map((sym) =>
+        getCoinHistory(sym)
+          .then((candles) => [sym, candles.slice(-30)])
+          .catch(() => [sym, []]),
+      ),
+    ).then((entries) => { if (!cancelled) setChartHistory(Object.fromEntries(entries)); });
+    return () => { cancelled = true; };
+  }, []);
+
+  const { prices: livePrices, series, flashes } = useMarketPrices(
+    initialCoins.length ? initialCoins : SUPPORTED_SYMBOLS,
+  );
+  const selectedCoin = livePrices.find((c) => c.symbol === symbol);
+  const currentPriceBDT = selectedCoin?.priceBDT ?? null;
+  const selectedMeta = COIN_META[symbol] ?? { glyph: symbol[0], name: symbol };
 
   const availablePoints = wallet?.virtualPoints ?? 0;
   const selectedPreset = DURATION_PRESETS.find((p) => p.minutes === durationMinutes) ?? DURATION_PRESETS[0];
@@ -95,32 +116,46 @@ export function PredictionsPage() {
         </p>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) 280px', gap: 20, alignItems: 'start' }}>
+      <div className="grid grid-cols-1 items-start gap-5 lg:grid-cols-[320px_400px_1fr]">
+        {/* ─── Market Watchlist ─── */}
+        <MarketWatchlist
+          coins={livePrices}
+          history={chartHistory}
+          series={series}
+          flashes={flashes}
+          active={symbol}
+          onSelect={setSymbol}
+          formatPrice={formatBDT}
+        />
+
         {/* ─── Prediction Form ─── */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 16, alignItems: 'center' }}>
-          <div className="card card-p" style={{ width: '100%', maxWidth: 400 }}>
-            {/* Coin + current price */}
-            <div>
-              <label htmlFor="prediction-symbol" className="cs-label">Coin</label>
-              <select
-                id="prediction-symbol"
-                value={symbol}
-                onChange={(e) => setSymbol(e.target.value)}
-                className="cs-select"
-              >
-                {SUPPORTED_SYMBOLS.map((sym) => (
-                  <option key={sym} value={sym}>{sym}</option>
-                ))}
-              </select>
-              {currentPriceBDT && (
-                <p style={{ fontSize: 12, color: 'var(--color-muted)', marginTop: 6 }}>
-                  Current price:{' '}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16, width: '100%' }}>
+          <div className="card card-p" style={{ width: '100%' }}>
+            {/* Selected coin + live price */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <div className={`coin-icon coin-${symbol}`}>{selectedMeta.glyph}</div>
+              <div style={{ minWidth: 0 }}>
+                <p style={{ fontSize: 15, fontWeight: 700, color: 'var(--color-ink)', margin: 0 }}>
+                  {symbol} <span style={{ fontWeight: 500, color: 'var(--color-muted)' }}>{selectedMeta.name}</span>
+                </p>
+                <p style={{ fontSize: 13, margin: '2px 0 0' }}>
                   <span style={{ fontFamily: 'var(--font-mono)', color: 'var(--color-ink)', fontWeight: 600 }}>
                     {formatBDT(currentPriceBDT)}
                   </span>
+                  {selectedCoin?.percentChange24h !== null && selectedCoin?.percentChange24h !== undefined && (
+                    <span
+                      className={selectedCoin.percentChange24h >= 0 ? 'text-up' : 'text-down'}
+                      style={{ marginLeft: 8, fontWeight: 600 }}
+                    >
+                      {selectedCoin.percentChange24h >= 0 ? '+' : ''}{selectedCoin.percentChange24h.toFixed(2)}%
+                    </span>
+                  )}
                 </p>
-              )}
+              </div>
             </div>
+            <p style={{ fontSize: 11, color: 'var(--color-muted)', marginTop: 8 }}>
+              Pick a different coin from the watchlist on the left.
+            </p>
 
             {/* Duration presets */}
             <div style={{ marginTop: 16 }}>
@@ -165,39 +200,112 @@ export function PredictionsPage() {
             quickAmounts={[10, 50, 100, 500]}
             minTrade={1}
             orderTypeLabel={selectedPreset.label}
+            className="max-w-none"
           />
         </div>
 
         {/* ─── Info Card ─── */}
-        <div className="card card-p" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-          <h3 className="section-title">How it works</h3>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            {[
-              { step: '1', text: 'Pick a coin, direction (up/down), duration, and points to stake.' },
-              { step: '2', text: 'Your prediction is judged against your own simulated price feed at the close time.' },
-              { step: '3', text: 'Win: get double your stake back. Lose: forfeit the stake.' },
-            ].map(({ step, text }) => (
-              <div key={step} style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
-                <div
-                  style={{
-                    width: 24,
-                    height: 24,
-                    borderRadius: '50%',
-                    backgroundColor: 'var(--color-primary)',
-                    color: 'var(--color-on-primary)',
-                    fontSize: 12,
-                    fontWeight: 700,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    flexShrink: 0,
-                  }}
-                >
-                  {step}
+        <div className="card card-p" style={{ display: 'flex', flexDirection: 'column', gap: 20, width: '100%' }}>
+          <div>
+            <h3 className="section-title">How it works</h3>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 14, marginTop: 14 }}>
+              {[
+                {
+                  step: '1',
+                  title: 'Set up your call',
+                  text: 'Pick a coin from the watchlist, choose Up or Down, a close window (15 sec to 24 hours), and how many points to stake.',
+                },
+                {
+                  step: '2',
+                  title: 'The clock runs',
+                  text: "Your stake is locked in immediately. The prediction is judged against your own simulated price feed, sampled the instant the window closes.",
+                },
+                {
+                  step: '3',
+                  title: 'Win or lose',
+                  text: 'Called it right? Your stake doubles and lands in your wallet instantly. Wrong call? The stake is forfeited — no partial refunds.',
+                },
+              ].map(({ step, title, text }) => (
+                <div key={step} style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+                  <div
+                    style={{
+                      width: 24,
+                      height: 24,
+                      borderRadius: '50%',
+                      backgroundColor: 'var(--color-primary)',
+                      color: 'var(--color-on-primary)',
+                      fontSize: 12,
+                      fontWeight: 700,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      flexShrink: 0,
+                    }}
+                  >
+                    {step}
+                  </div>
+                  <div>
+                    <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-ink)', margin: 0 }}>{title}</p>
+                    <p style={{ fontSize: 13, color: 'var(--color-muted)', margin: '2px 0 0', lineHeight: 1.5 }}>
+                      {text}
+                    </p>
+                  </div>
                 </div>
-                <p style={{ fontSize: 13, color: 'var(--color-muted)', margin: 0, lineHeight: 1.5 }}>{text}</p>
+              ))}
+            </div>
+          </div>
+
+          <div style={{ borderTop: '1px solid var(--color-hairline)', paddingTop: 16 }}>
+            <span className="cs-label">Example payout</span>
+            <div style={{ display: 'flex', gap: 10, marginTop: 10 }}>
+              <div style={{ flex: 1, borderRadius: 'var(--radius-md)', border: '1px solid var(--color-hairline)', padding: '10px 12px' }}>
+                <p style={{ fontSize: 11, color: 'var(--color-muted)', margin: 0 }}>Stake</p>
+                <p style={{ fontSize: 15, fontWeight: 700, color: 'var(--color-ink)', fontFamily: 'var(--font-mono)', margin: '2px 0 0' }}>
+                  100 pts
+                </p>
               </div>
-            ))}
+              <div style={{ flex: 1, borderRadius: 'var(--radius-md)', backgroundColor: 'var(--color-up-bg)', padding: '10px 12px' }}>
+                <p style={{ fontSize: 11, color: 'var(--color-muted)', margin: 0 }}>Correct call</p>
+                <p className="text-up" style={{ fontSize: 15, fontWeight: 700, fontFamily: 'var(--font-mono)', margin: '2px 0 0' }}>
+                  +100 pts
+                </p>
+              </div>
+              <div style={{ flex: 1, borderRadius: 'var(--radius-md)', backgroundColor: 'var(--color-down-bg)', padding: '10px 12px' }}>
+                <p style={{ fontSize: 11, color: 'var(--color-muted)', margin: 0 }}>Wrong call</p>
+                <p className="text-down" style={{ fontSize: 15, fontWeight: 700, fontFamily: 'var(--font-mono)', margin: '2px 0 0' }}>
+                  -100 pts
+                </p>
+              </div>
+            </div>
+            <p style={{ fontSize: 12, color: 'var(--color-muted)', margin: '10px 0 0', lineHeight: 1.5 }}>
+              Every trade pays out at a fixed 2.00× multiplier — win and you walk away with 200 pts, double what you put in.
+            </p>
+          </div>
+
+          <div style={{ borderTop: '1px solid var(--color-hairline)', paddingTop: 16 }}>
+            <span className="cs-label">Good to know</span>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 10 }}>
+              {[
+                'Once confirmed, a prediction can\'t be cancelled or adjusted before its close time.',
+                'Shorter windows (15 sec, 5 min) move fast and swing more — longer windows smooth out the noise.',
+                'Your simulated feed is personal to your account, separate from the public Market page ticker.',
+                'Settled predictions — wins and losses alike — appear instantly in Your Predictions below.',
+              ].map((text) => (
+                <div key={text} style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+                  <span
+                    style={{
+                      width: 5,
+                      height: 5,
+                      borderRadius: '50%',
+                      backgroundColor: 'var(--color-primary)',
+                      marginTop: 7,
+                      flexShrink: 0,
+                    }}
+                  />
+                  <p style={{ fontSize: 13, color: 'var(--color-muted)', margin: 0, lineHeight: 1.5 }}>{text}</p>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </div>
