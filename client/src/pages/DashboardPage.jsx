@@ -19,12 +19,12 @@ function formatCompact(value) {
 }
 
 const QUICK_LINKS = [
-  { to: '/market', label: '🔭 View Market', desc: 'Browse live prices' },
-  { to: '/portfolio', label: '📊 Portfolio', desc: 'Your holdings & P/L' },
-  { to: '/predictions', label: '🎯 Predictions', desc: 'Stake virtual points' },
-  { to: '/achievements', label: '🏆 Achievements', desc: 'Your milestones' },
-  { to: '/leaderboard', label: '🥇 Leaderboard', desc: 'Compare with others' },
-  { to: '/learning', label: '🎓 Learning', desc: 'Crypto basics' },
+  { to: '/market', label: 'View Market', desc: 'Browse live prices' },
+  { to: '/portfolio', label: 'Portfolio', desc: 'Your holdings & P/L' },
+  { to: '/predictions', label: 'Predictions', desc: 'Stake virtual points' },
+  { to: '/achievements', label: 'Achievements', desc: 'Your milestones' },
+  { to: '/leaderboard', label: 'Leaderboard', desc: 'Compare with others' },
+  { to: '/learning', label: 'Learning', desc: 'Crypto basics' },
 ];
 
 export function DashboardPage() {
@@ -56,7 +56,7 @@ export function DashboardPage() {
       {/* ─── Welcome Banner ─── */}
       <div
         style={{
-          background: 'linear-gradient(135deg, var(--color-ink) 0%, #2b3139 100%)',
+          background: 'linear-gradient(135deg, #000000 0%, #2b2410 100%)',
           borderRadius: 'var(--radius-xl)',
           padding: '32px',
           color: '#fff',
@@ -70,7 +70,7 @@ export function DashboardPage() {
         <div>
           <p style={{ fontSize: 13, color: '#929aa5', marginBottom: 6 }}>Welcome back</p>
           <h1 style={{ fontSize: 28, fontWeight: 700, color: '#fff', margin: 0 }}>
-            {user?.name} 👋
+            {user?.name}
           </h1>
           <p style={{ color: '#707a8a', fontSize: 14, marginTop: 8, maxWidth: 400 }}>
             Practice trading and learn crypto market mechanics — completely risk-free.

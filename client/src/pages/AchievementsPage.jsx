@@ -6,26 +6,6 @@ function formatDate(value) {
   return new Date(value).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
-const ACHIEVEMENT_ICONS = {
-  FIRST_TRADE: '⚡',
-  FIVE_TRADES: '🔄',
-  FIRST_PREDICTION: '🎯',
-  PREDICTION_WINNER: '✅',
-  FIVE_WINS: '🔮',
-  WALLET_MILESTONE: '💰',
-  WINNING_STREAK: '🔥',
-  TEN_TRADES: '📈',
-  TWENTY_TRADES: '🏆',
-  FIRST_SELL: '💸',
-  DIVERSIFIED: '🌈',
-  FULL_PORTFOLIO: '🃏',
-  TEN_WINS: '🧠',
-  BIG_WINNER: '🎰',
-  TRIPLE_UP: '🚀',
-  POINTS_COLLECTOR: '⭐',
-  STREAK_MASTER: '🔥🔥',
-};
-
 export function AchievementsPage() {
   const [achievements, setAchievements] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -110,7 +90,7 @@ export function AchievementsPage() {
         }}
       >
         {achievements.map((achievement) => {
-          const icon = ACHIEVEMENT_ICONS[achievement.code] ?? '🏅';
+          const icon = achievement.title?.charAt(0)?.toUpperCase() ?? '?';
           const unlocked = achievement.unlocked;
           const dateStr = formatDate(achievement.unlockedAt);
 
@@ -130,15 +110,17 @@ export function AchievementsPage() {
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    fontSize: 22,
+                    fontSize: 18,
+                    fontWeight: 700,
+                    fontFamily: 'var(--font-mono)',
+                    color: unlocked ? 'var(--color-primary)' : 'var(--color-muted)',
                     backgroundColor: unlocked
                       ? 'rgba(252,213,53,0.12)'
                       : 'var(--color-surface)',
                     border: `1px solid ${unlocked ? 'rgba(252,213,53,0.3)' : 'var(--color-hairline)'}`,
-                    filter: unlocked ? 'none' : 'grayscale(1)',
                   }}
                 >
-                  {unlocked ? icon : '🔒'}
+                  {icon}
                 </div>
 
                 {unlocked && (

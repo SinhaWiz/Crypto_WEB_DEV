@@ -161,7 +161,6 @@ export function LearningPage() {
 
       {groupedLessons.length === 0 && (
         <div className="card" style={{ padding: 48, textAlign: 'center' }}>
-          <p style={{ fontSize: 32, marginBottom: 12 }}>📚</p>
           <p className="text-muted">No lessons available yet.</p>
         </div>
       )}

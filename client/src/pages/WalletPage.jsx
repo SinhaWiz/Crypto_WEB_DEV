@@ -140,13 +140,13 @@ export function WalletPage() {
             <h3 className="section-title" style={{ marginBottom: 12 }}>How it works</h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               {[
-                { icon: '🎯', text: 'Points are used to stake predictions on price direction.' },
-                { icon: '✅', text: `Win a prediction and get double your stake back.` },
-                { icon: '💸', text: `1 point costs ${formatBDT(POINTS_EXCHANGE_RATE_BDT)} of your cash balance.` },
-                { icon: '⚡', text: `Buying and selling coins carries a ${(TRADE_FEE_RATE * 100).toFixed(1)}% platform fee.` },
-              ].map(({ icon, text }) => (
+                'Points are used to stake predictions on price direction.',
+                'Win a prediction and get double your stake back.',
+                `1 point costs ${formatBDT(POINTS_EXCHANGE_RATE_BDT)} of your cash balance.`,
+                `Buying and selling coins carries a ${(TRADE_FEE_RATE * 100).toFixed(1)}% platform fee.`,
+              ].map((text) => (
                 <div key={text} style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
-                  <span style={{ fontSize: 16, flexShrink: 0 }}>{icon}</span>
+                  <span style={{ color: 'var(--color-primary)', flexShrink: 0, lineHeight: '1.5' }}>&bull;</span>
                   <p style={{ fontSize: 13, color: 'var(--color-muted)', margin: 0, lineHeight: 1.5 }}>{text}</p>
                 </div>
               ))}

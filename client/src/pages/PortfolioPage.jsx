@@ -208,7 +208,6 @@ export function PortfolioPage() {
           className="card"
           style={{ padding: 48, textAlign: 'center' }}
         >
-          <p style={{ fontSize: 32, marginBottom: 12 }}>📭</p>
           <p style={{ color: 'var(--color-muted)', fontSize: 15 }}>
             You don't hold any coins yet.
           </p>

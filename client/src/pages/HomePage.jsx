@@ -3,24 +3,20 @@ import { useAuth } from '../features/auth/AuthContext';
 
 const FEATURES = [
   {
-    icon: '💰',
     title: 'Virtual Balance',
-    desc: 'Start with ৳1,00,000 virtual BDT. Execute trades and watch your portfolio grow — or shrink — based on real-time simulated ticks.',
+    desc: 'Start with ৳1,00,000 virtual BDT and trade against real-time simulated ticks.',
   },
   {
-    icon: '📈',
     title: 'Live Market Engine',
-    desc: 'Custom Geometric Brownian Motion simulation generates unique, live price ticks for every user. Anchored to real CoinGecko prices.',
+    desc: 'Unique price ticks per user, anchored to real CoinGecko prices.',
   },
   {
-    icon: '🏆',
     title: 'Gamification',
-    desc: 'Climb the leaderboard, unlock achievements, and stake virtual points on price direction predictions to earn more.',
+    desc: 'Leaderboard, achievements, and price-direction predictions.',
   },
   {
-    icon: '🎓',
     title: '100% Educational',
-    desc: 'No real money. No risk. Strictly designed to teach the fundamentals of market mechanics and crypto trading.',
+    desc: 'No real money, no risk — just market mechanics.',
   },
 ];
 
@@ -40,7 +36,7 @@ export function HomePage() {
       {/* ─── Hero Band ─── */}
       <section
         style={{
-          backgroundColor: 'var(--color-ink)',
+          backgroundColor: '#000000',
           color: '#ffffff',
           padding: '80px 24px',
           textAlign: 'center',
@@ -52,7 +48,7 @@ export function HomePage() {
             className="badge badge-yellow"
             style={{ display: 'inline-flex', marginBottom: 24, fontSize: 13 }}
           >
-            🇧🇩 Made for Bangladesh — 100% Educational
+            Made for Bangladesh — 100% Educational
           </div>
 
           {/* H1 */}
@@ -81,7 +77,7 @@ export function HomePage() {
               margin: '0 auto 40px',
             }}
           >
-            A safe, realistic simulator for students to practice trading, understand market volatility, and master portfolio management — completely risk-free.
+            Practice trading, read market volatility, and manage a portfolio — with zero real risk.
           </p>
 
           {/* CTAs */}
@@ -160,9 +156,6 @@ export function HomePage() {
             <h2 className="page-title" style={{ fontSize: 36 }}>
               Everything you need to practice trading
             </h2>
-            <p style={{ color: 'var(--color-muted)', maxWidth: 500, margin: '12px auto 0', lineHeight: 1.6 }}>
-              A deterministic, simulated environment powered by real historical data so you can test strategies safely.
-            </p>
           </div>
 
           {/* Feature cards */}
@@ -173,7 +166,7 @@ export function HomePage() {
               gap: 24,
             }}
           >
-            {FEATURES.map(({ icon, title, desc }) => (
+            {FEATURES.map(({ title, desc }, i) => (
               <div key={title} className="card card-p" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
                 <div
                   style={{
@@ -185,10 +178,13 @@ export function HomePage() {
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    fontSize: 22,
+                    fontSize: 16,
+                    fontWeight: 700,
+                    fontFamily: 'var(--font-mono)',
+                    color: 'var(--color-primary)',
                   }}
                 >
-                  {icon}
+                  {String(i + 1).padStart(2, '0')}
                 </div>
                 <div>
                   <h3 style={{ fontSize: 16, fontWeight: 600, color: 'var(--color-ink)', marginBottom: 8 }}>
@@ -217,7 +213,7 @@ export function HomePage() {
               Ready to start trading?
             </h2>
             <p style={{ color: 'var(--color-muted)', marginBottom: 32, lineHeight: 1.6 }}>
-              Create your free account in seconds. Get ৳1,00,000 in virtual balance and start learning the markets immediately.
+              Free account, ৳1,00,000 virtual balance, no card required.
             </p>
             <Link to="/register" className="btn btn-primary-pill" id="home-cta-signup-btn">
               Create Free Account

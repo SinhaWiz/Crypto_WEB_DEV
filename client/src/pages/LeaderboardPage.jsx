@@ -20,22 +20,13 @@ function returnColor(value) {
 
 function RankDisplay({ rank }) {
   if (rank === 1) return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-      <span style={{ fontSize: 22 }}>🥇</span>
-      <span style={{ fontWeight: 700, color: '#f0b90b', fontFamily: 'var(--font-mono)', fontSize: 15 }}>#1</span>
-    </div>
+    <span style={{ fontWeight: 700, color: '#f0b90b', fontFamily: 'var(--font-mono)', fontSize: 16 }}>#1</span>
   );
   if (rank === 2) return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-      <span style={{ fontSize: 22 }}>🥈</span>
-      <span style={{ fontWeight: 700, color: '#929aa5', fontFamily: 'var(--font-mono)', fontSize: 15 }}>#2</span>
-    </div>
+    <span style={{ fontWeight: 700, color: '#929aa5', fontFamily: 'var(--font-mono)', fontSize: 16 }}>#2</span>
   );
   if (rank === 3) return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-      <span style={{ fontSize: 22 }}>🥉</span>
-      <span style={{ fontWeight: 700, color: '#cd7f32', fontFamily: 'var(--font-mono)', fontSize: 15 }}>#3</span>
-    </div>
+    <span style={{ fontWeight: 700, color: '#cd7f32', fontFamily: 'var(--font-mono)', fontSize: 16 }}>#3</span>
   );
   return (
     <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 500, color: 'var(--color-muted)', fontSize: 14 }}>
@@ -138,9 +129,8 @@ export function LeaderboardPage() {
       <div className="card" style={{ overflow: 'hidden' }}>
         {leaderboard.length === 0 ? (
           <div style={{ padding: 48, textAlign: 'center' }}>
-            <p style={{ fontSize: 32, marginBottom: 12 }}>🏁</p>
             <p className="text-muted" style={{ fontSize: 15 }}>No traders on the board yet.</p>
-            <p className="text-muted" style={{ fontSize: 13, marginTop: 4 }}>Be the first to make a trade!</p>
+            <p className="text-muted" style={{ fontSize: 13, marginTop: 4 }}>Be the first to make a trade.</p>
           </div>
         ) : (
           <div style={{ overflowX: 'auto' }}>
