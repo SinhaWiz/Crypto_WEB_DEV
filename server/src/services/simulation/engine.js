@@ -3,6 +3,7 @@ import { SUPPORTED_SYMBOLS, BDT_PER_USD } from '../../constants/index.js';
 import { PriceHistory } from '../../models/PriceHistory.js';
 import { SimulatedPriceTick } from '../../models/SimulatedPriceTick.js';
 import { seededNormal } from './seededRandom.js';
+import { getSingleCoinSnapshot } from '../coinService.js';
 
 // Fallback USD prices if DB has no history yet
 const FALLBACK_USD_ANCHORS = {
@@ -79,6 +80,20 @@ export async function buildSimulatedSnapshot(session) {
  * The price is stored and emitted in BDT.
  */
 export async function generateNextTick(session, symbol, now = new Date()) {
+  if (session.mode === 'real') {
+    const snapshot = await getSingleCoinSnapshot(symbol, 'coingecko');
+    const priceBDT = snapshot ? snapshot.close * BDT_PER_USD : await getAnchorPriceBDT(symbol);
+
+    return {
+      sessionId: session._id,
+      symbol,
+      priceBDT,
+      sourceWindow: session.sourceWindow,
+      seed: session.seed,
+      generatedAt: now,
+    };
+  }
+
   const difficulty = normalizeDifficulty(session.difficulty);
   const preset = DIFFICULTY_PRESETS[difficulty];
 

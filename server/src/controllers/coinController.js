@@ -4,6 +4,7 @@ import {
   syncLatestPrices,
   getSingleCoinSnapshot,
 } from '../services/coinService.js';
+import { getUserPriceProvider } from '../services/priceModeService.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { AppError } from '../utils/AppError.js';
 import { ERROR_CODES, SUPPORTED_SYMBOLS, BDT_PER_USD } from '../constants/index.js';
@@ -37,7 +38,8 @@ function toPublicCoin(doc) {
  * GET /api/coins — latest snapshot for all 6 supported symbols.
  */
 export const listCoins = asyncHandler(async (req, res) => {
-  const prices = await getLatestPrices();
+  const provider = await getUserPriceProvider(req.user?.id);
+  const prices = await getLatestPrices(provider);
   const coins = prices.map(toPublicCoin);
   res.json({ coins });
 });
@@ -47,7 +49,8 @@ export const listCoins = asyncHandler(async (req, res) => {
  */
 export const getCoin = asyncHandler(async (req, res) => {
   const symbol = assertValidSymbol(req.params.symbol);
-  const doc = await getSingleCoinSnapshot(symbol);
+  const provider = await getUserPriceProvider(req.user?.id);
+  const doc = await getSingleCoinSnapshot(symbol, provider);
   if (!doc) {
     throw new AppError(`No price data available for ${symbol}`, 404, ERROR_CODES.NOT_FOUND);
   }
@@ -59,7 +62,8 @@ export const getCoin = asyncHandler(async (req, res) => {
  */
 export const getHistory = asyncHandler(async (req, res) => {
   const symbol = assertValidSymbol(req.params.symbol);
-  const raw = await fetchCoinHistoryFromDB(symbol);
+  const provider = await getUserPriceProvider(req.user?.id);
+  const raw = await fetchCoinHistoryFromDB(symbol, 50, provider);
   if (!raw || raw.length === 0) {
     throw new AppError(`No history found for ${symbol}`, 404, ERROR_CODES.NOT_FOUND);
   }

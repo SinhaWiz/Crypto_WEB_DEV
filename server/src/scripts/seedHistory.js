@@ -6,8 +6,10 @@ import { SUPPORTED_SYMBOLS } from '../constants/index.js';
 import mongoose from 'mongoose';
 
 const SEED_DAYS = 30; // Seed 30 days of history
-const PROVIDER_NAME = 'synthetic';
+const SYNTHETIC_PROVIDER = 'synthetic';
+const REAL_PROVIDER = 'coingecko';
 const DEFAULT_INTERVAL = '1d';
+const REAL_HISTORY_DELAY_MS = 1500; // spacing between per-symbol OHLC calls to stay under CoinGecko's free-tier rate limit
 
 // Fallback USD anchors if the live CoinGecko fetch is unavailable (offline dev, rate limit).
 const FALLBACK_USD_ANCHORS = {
@@ -53,7 +55,7 @@ async function seedHistory() {
 
         return {
           symbol,
-          provider: PROVIDER_NAME,
+          provider: SYNTHETIC_PROVIDER,
           interval: DEFAULT_INTERVAL,
           timestamp: candle.timestamp,
           open: candle.open,
@@ -68,6 +70,41 @@ async function seedHistory() {
     );
 
     console.log(`Generated ${candles.length} candles for ${symbol}, anchored at $${anchorPriceUsd.toFixed(4)}`);
+  }
+
+  console.log(`Fetching ${SEED_DAYS} days of REAL OHLC history per coin for real-mode users (this is slower — sequential, rate-limited)...`);
+
+  for (const symbol of SUPPORTED_SYMBOLS) {
+    try {
+      const realCandles = await coinGeckoProvider.fetchHistory(symbol, DEFAULT_INTERVAL, SEED_DAYS);
+      const snapshot = snapshots[symbol];
+
+      recordsToInsert.push(
+        ...realCandles.map((candle, i) => {
+          const isLatest = i === realCandles.length - 1;
+
+          return {
+            symbol,
+            provider: REAL_PROVIDER,
+            interval: DEFAULT_INTERVAL,
+            timestamp: candle.timestamp,
+            open: candle.open,
+            high: candle.high,
+            low: candle.low,
+            close: candle.close,
+            volume: isLatest ? (snapshot?.volume24h ?? 0) : 0,
+            marketCap: isLatest ? (snapshot?.marketCap ?? 0) : 0,
+            percentChange24h: isLatest ? (snapshot?.percentChange24h ?? 0) : 0,
+          };
+        }),
+      );
+
+      console.log(`Fetched ${realCandles.length} real candles for ${symbol}`);
+    } catch (err) {
+      console.error(`Could not fetch real history for ${symbol}, skipping:`, err.message);
+    }
+
+    await new Promise((resolve) => setTimeout(resolve, REAL_HISTORY_DELAY_MS));
   }
 
   if (recordsToInsert.length > 0) {
