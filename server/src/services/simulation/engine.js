@@ -124,3 +124,27 @@ export async function generateNextTick(session, symbol, now = new Date()) {
 export async function generateSessionTicks(session, now = new Date()) {
   return Promise.all(SUPPORTED_SYMBOLS.map((symbol) => generateNextTick(session, symbol, now)));
 }
+
+/**
+ * Percent change over the trailing 24h for a session's own simulated price
+ * path — computed live from that session's SimulatedPriceTick history rather
+ * than a static snapshot, so it actually moves with the live simulation
+ * (ordinary drift, and market-event shocks). If the session hasn't been
+ * running for a full 24h yet, falls back to its earliest recorded tick.
+ */
+export async function getSessionPercentChange24h(session, symbol, currentPriceBDT) {
+  const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+
+  const referenceTick =
+    (await SimulatedPriceTick.findOne({
+      sessionId: session._id,
+      symbol,
+      generatedAt: { $lte: twentyFourHoursAgo },
+    }).sort({ generatedAt: -1 })) ??
+    (await SimulatedPriceTick.findOne({ sessionId: session._id, symbol }).sort({ generatedAt: 1 }));
+
+  const referencePrice = referenceTick?.priceBDT;
+  if (!referencePrice || !currentPriceBDT) return null;
+
+  return ((currentPriceBDT - referencePrice) / referencePrice) * 100;
+}

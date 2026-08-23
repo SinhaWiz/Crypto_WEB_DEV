@@ -94,6 +94,7 @@ export function emitMarketTicks(io, userId, ticks) {
     priceBDT: tick.priceBDT,
     timestamp: tick.generatedAt,
     sourceWindow: tick.sourceWindow,
+    percentChange24h: tick.percentChange24h,
   }));
 
   io.to(userRoom(userId)).emit('market:tick', { prices });
