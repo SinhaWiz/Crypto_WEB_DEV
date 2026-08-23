@@ -1,12 +1,20 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useAuth } from '../features/auth/AuthContext';
 import { POINTS_EXCHANGE_RATE_BDT, TRADE_FEE_RATE } from '../lib/constants';
-import { buyPoints } from '../services/walletService';
+import { buyPoints, claimStipend, getWallet } from '../services/walletService';
 import { SlideButton } from '../components/ui/slide-button';
 
 function formatBDT(value) {
   if (value === null || value === undefined || Number.isNaN(value)) return '—';
   return `৳${value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+}
+
+function formatCountdown(availableAt) {
+  const ms = Math.max(0, new Date(availableAt).getTime() - Date.now());
+  const hours = Math.floor(ms / 3600000);
+  const minutes = Math.ceil((ms % 3600000) / 60000);
+  if (hours <= 0) return `${minutes}m`;
+  return `${hours}h ${minutes}m`;
 }
 
 export function WalletPage() {
@@ -15,6 +23,30 @@ export function WalletPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState(null);
   const [successMessage, setSuccessMessage] = useState(null);
+
+  const [stipend, setStipend] = useState(null);
+  const [isClaiming, setIsClaiming] = useState(false);
+  const [claimError, setClaimError] = useState(null);
+
+  const loadStipend = useCallback(() => {
+    getWallet().then((res) => setStipend(res.stipend)).catch(() => {});
+  }, []);
+
+  useEffect(() => { loadStipend(); }, [loadStipend]);
+
+  const handleClaimStipend = useCallback(async () => {
+    setIsClaiming(true);
+    setClaimError(null);
+    try {
+      const res = await claimStipend();
+      setStipend(res.stipend);
+      await refreshWallet();
+    } catch (err) {
+      setClaimError(err?.message || 'Could not claim your stipend right now.');
+    } finally {
+      setIsClaiming(false);
+    }
+  }, [refreshWallet]);
 
   const parsedPoints = Number(pointsToBuy);
   const hasValidPoints = pointsToBuy !== '' && Number.isFinite(parsedPoints) && parsedPoints > 0;
@@ -32,13 +64,14 @@ export function WalletPage() {
       setSuccessMessage(`Purchased ${parsedPoints} point(s) for ${formatBDT(costBDT)}.`);
       setPointsToBuy('');
       await refreshWallet();
+      loadStipend();
     } catch (err) {
       setError(err?.message || 'Could not buy points. Please try again.');
       throw err;
     } finally {
       setIsSubmitting(false);
     }
-  }, [parsedPoints, costBDT, refreshWallet]);
+  }, [parsedPoints, costBDT, refreshWallet, loadStipend]);
 
   const disabledReason = !hasValidPoints
     ? 'Enter points to buy'
@@ -71,6 +104,43 @@ export function WalletPage() {
           <p className="text-muted" style={{ fontSize: 12, marginTop: 4 }}>Use to stake predictions</p>
         </div>
       </div>
+
+      {/* ─── Daily Stipend — only shown once the wallet is genuinely stuck ─── */}
+      {stipend?.lowBalance && (
+        <div
+          className="card card-p"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            flexWrap: 'wrap',
+            gap: 12,
+            border: '1px solid rgba(252,213,53,0.3)',
+            backgroundColor: 'rgba(252,213,53,0.05)',
+          }}
+        >
+          <div>
+            <p style={{ fontSize: 14, fontWeight: 700, color: 'var(--color-ink)', margin: 0 }}>
+              Running low? Claim your daily stipend
+            </p>
+            <p style={{ fontSize: 12, color: 'var(--color-muted)', margin: '4px 0 0' }}>
+              {stipend.eligible
+                ? `+${formatBDT(stipend.amount.cashBDT)} cash and +${stipend.amount.points} points, once every 24h.`
+                : `Already claimed — next one available in ${formatCountdown(stipend.availableAt)}.`}
+            </p>
+            {claimError && <p className="msg-error" style={{ marginTop: 8 }}>{claimError}</p>}
+          </div>
+          <button
+            type="button"
+            id="claim-stipend-btn"
+            className="btn btn-primary btn-sm"
+            disabled={!stipend.eligible || isClaiming}
+            onClick={handleClaimStipend}
+          >
+            {isClaiming ? 'Claiming…' : 'Claim Stipend'}
+          </button>
+        </div>
+      )}
 
       <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) 320px', gap: 20, alignItems: 'start' }}>
         {/* ─── Buy Points Form ─── */}

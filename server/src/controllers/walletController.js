@@ -1,5 +1,9 @@
 import { Wallet } from '../models/Wallet.js';
-import { buyPoints as buyPointsTransaction } from '../services/walletService.js';
+import {
+  buyPoints as buyPointsTransaction,
+  claimDailyStipend,
+  getStipendStatus,
+} from '../services/walletService.js';
 import { AppError } from '../utils/AppError.js';
 import { ERROR_CODES } from '../constants/index.js';
 
@@ -20,7 +24,12 @@ export async function getWallet(req, res) {
   if (!wallet) {
     throw new AppError('Wallet not found', 404, ERROR_CODES.NOT_FOUND);
   }
-  res.json({ wallet });
+  res.json({ wallet, stipend: getStipendStatus(wallet) });
+}
+
+export async function claimStipend(req, res) {
+  const { wallet } = await claimDailyStipend(req.user.id);
+  res.json({ wallet, stipend: getStipendStatus(wallet) });
 }
 
 export async function buyPoints(req, res) {
