@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
 import { getOpenPositions, getPortfolio, getTransactions } from '../services/tradeService';
+import { useAuth } from '../features/auth/AuthContext';
 
 const ALLOCATION_COLORS = ['#f0b90b', '#0ecb81', '#f6465d', '#3b82f6', '#9945ff', '#0085c3'];
 
@@ -59,6 +60,8 @@ function ChartTooltip({ active, payload }) {
 }
 
 export function PortfolioPage() {
+  const { mode } = useAuth();
+  const isReal = mode === 'real';
   const [portfolio, setPortfolio] = useState(null);
   const [openPositions, setOpenPositions] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -117,7 +120,9 @@ export function PortfolioPage() {
       {/* Header */}
       <div>
         <h1 className="page-title">Portfolio</h1>
-        <p className="page-subtitle">Your holdings, valued at live simulated prices.</p>
+        <p className="page-subtitle">
+          {isReal ? 'Your holdings, valued at live market prices.' : 'Your holdings, valued at live simulated prices.'}
+        </p>
       </div>
 
       {/* ─── Summary Stats ─── */}
