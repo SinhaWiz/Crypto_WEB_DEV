@@ -8,9 +8,9 @@ import {
 } from 'react';
 import {
   AnimatePresence,
+  animate,
   motion,
   useMotionValue,
-  useSpring,
   useTransform,
 } from 'motion/react';
 import { Check, Loader2, SendHorizontal, X } from 'lucide-react';
@@ -20,9 +20,9 @@ import { Button } from '@/components/ui/button';
 
 const KNOB_SIZE = 44;
 const TRACK_INSET = 8;
-const DRAG_THRESHOLD = 0.9
-const RESET_DELAY_SUCCESS = 1200
-const RESET_DELAY_ERROR = 1800
+const DRAG_THRESHOLD = 0.9;
+const RESET_DELAY_SUCCESS = 1200;
+const RESET_DELAY_ERROR = 1800;
 
 const BUTTON_STATES = {
   initial: { width: '100%' },
@@ -117,9 +117,8 @@ export const SlideButton = forwardRef(
     const dragConstraints = useMemo(() => ({ left: 0, right: dragRight }), [dragRight]);
 
     const dragX = useMotionValue(0);
-    const springX = useSpring(dragX, ANIMATION_CONFIG.spring);
-    const dragProgress = useTransform(springX, [0, dragRight || 1], [0, 1]);
-    const adjustedWidth = useTransform(springX, (x) => x + 10);
+    const dragProgress = useTransform(dragX, [0, dragRight || 1], [0, 1]);
+    const adjustedWidth = useTransform(dragX, (x) => x + 10);
 
     const runConfirm = useCallback(async () => {
       setStatus('loading');
@@ -133,11 +132,15 @@ export const SlideButton = forwardRef(
       }
 
       setStatus(resultStatus);
+      const totalDelay = resultStatus === 'error' ? RESET_DELAY_ERROR : RESET_DELAY_SUCCESS;
+
       resetTimeoutRef.current = setTimeout(() => {
+        // No spring subscription to fight — dragX.set(0) is the single
+        // source of truth and takes effect immediately.
+        dragX.set(0);
         setStatus('idle');
         setCompleted(false);
-        dragX.set(0);
-      }, resultStatus === 'error' ? RESET_DELAY_ERROR : RESET_DELAY_SUCCESS);
+      }, totalDelay);
     }, [onConfirm, onError, dragX]);
 
     const handleDragStart = useCallback(() => {
@@ -154,7 +157,8 @@ export const SlideButton = forwardRef(
         setCompleted(true);
         runConfirm();
       } else {
-        dragX.set(0);
+        // Spring snap-back on failed drag — imperative, no persistent subscription.
+        animate(dragX, 0, ANIMATION_CONFIG.spring);
       }
     };
 
@@ -196,7 +200,7 @@ export const SlideButton = forwardRef(
               onDragStart={handleDragStart}
               onDragEnd={handleDragEnd}
               onDrag={handleDrag}
-              style={{ x: springX }}
+              style={{ x: dragX }}
               className="absolute left-1 z-10 flex cursor-grab items-center justify-start active:cursor-grabbing"
             >
               <Button
