@@ -2,7 +2,6 @@ import {
   AlertCircle,
   Banknote,
   CheckCircle2,
-  ChevronDown,
   Loader2,
 } from 'lucide-react';
 import {
@@ -518,7 +517,6 @@ export function PredictionMarket({
 
           <span className="mb-3 inline-flex items-center gap-2 text-xl font-semibold text-foreground">
             {orderTypeLabel}
-            <ChevronDown className="h-5 w-5" />
           </span>
         </div>
       </div>
