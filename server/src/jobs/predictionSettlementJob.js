@@ -68,11 +68,11 @@ export async function settleDuePredictions(io = null) {
 }
 
 export function startPredictionSettlementJob(io = null) {
-  cron.schedule('* * * * *', () => {
+  cron.schedule('*/10 * * * * *', () => {
     settleDuePredictions(io).catch((err) => {
       console.error('[JOB] predictionSettlementJob error:', err.message);
     });
   });
 
-  console.log('[JOB] predictionSettlementJob scheduled (every minute)');
+  console.log('[JOB] predictionSettlementJob scheduled (every 10 seconds)');
 }

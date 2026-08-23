@@ -7,7 +7,7 @@ import { evaluateAchievements } from './achievementService.js';
 import { AppError } from '../utils/AppError.js';
 import { ERROR_CODES, SUPPORTED_SYMBOLS } from '../constants/index.js';
 
-const MIN_DURATION_MINUTES = 1;
+const MIN_DURATION_MINUTES = 0.25;
 const MAX_DURATION_MINUTES = 24 * 60;
 
 function assertValidSymbol(symbol) {

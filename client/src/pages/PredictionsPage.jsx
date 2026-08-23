@@ -5,6 +5,7 @@ import { getCoin } from '../services/coinsService';
 import { placePrediction, getPredictionHistory } from '../services/predictionService';
 
 const DURATION_PRESETS = [
+  { label: '15 sec', minutes: 0.25 },
   { label: '5 min', minutes: 5 },
   { label: '15 min', minutes: 15 },
   { label: '1 hour', minutes: 60 },
