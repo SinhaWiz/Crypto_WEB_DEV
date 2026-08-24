@@ -17,6 +17,11 @@ const simulationSessionSchema = new mongoose.Schema(
       enum: ['beginner', 'intermediate', 'expert'],
       default: 'beginner',
     },
+    mode: {
+      type: String,
+      enum: ['simulated', 'real'],
+      default: 'simulated',
+    },
     sourceWindow: {
       type: String,
       default: '1d', // e.g., ties back to historical interval

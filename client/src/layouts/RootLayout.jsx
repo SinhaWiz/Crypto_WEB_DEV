@@ -9,6 +9,7 @@ const NAV_LINKS = [
   { to: '/portfolio', label: 'Portfolio' },
   { to: '/wallet', label: 'Wallet' },
   { to: '/predictions', label: 'Predictions' },
+  { to: '/events', label: 'Events' },
   { to: '/leaderboard', label: 'Leaderboard' },
   { to: '/achievements', label: 'Achievements' },
   { to: '/learning', label: 'Learning' },

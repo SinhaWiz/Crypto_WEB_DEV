@@ -47,12 +47,17 @@ export const syncLatestPrices = async () => {
 };
 
 /**
- * Get the latest prices for all supported coins
+ * Get the latest prices for all supported coins.
+ *
+ * `provider` picks which dataset to read: 'synthetic' (the seeded per-coin
+ * history used by simulated-mode users) or 'coingecko' (the real hourly-synced
+ * snapshot used by real-mode users). Defaults to 'synthetic' since that's the
+ * default account mode.
  */
-export const getLatestPrices = async () => {
+export const getLatestPrices = async (provider = 'synthetic') => {
   // Aggregate to get the latest record for each symbol
   const latestPrices = await PriceHistory.aggregate([
-    { $match: { symbol: { $in: SUPPORTED_SYMBOLS } } },
+    { $match: { symbol: { $in: SUPPORTED_SYMBOLS }, provider } },
     { $sort: { timestamp: -1 } },
     {
       $group: {
@@ -62,12 +67,15 @@ export const getLatestPrices = async () => {
     },
     { $replaceRoot: { newRoot: '$latestRecord' } },
   ]);
-  
-  // If no prices found in DB, try syncing from CoinGecko directly
+
+  // If no prices found in DB, try syncing from CoinGecko directly.
+  // Note: this always writes 'coingecko'-tagged records regardless of the
+  // requested provider — an acceptable degrade-gracefully fallback for an
+  // unseeded DB rather than returning nothing.
   if (latestPrices.length === 0) {
     return await syncLatestPrices();
   }
-  
+
   // Re-map `close` back to `price` for the frontend's compatibility if they expect `price`.
   // However, `price` is not on the schema anymore, `close` is. So we return `price: close`.
   return latestPrices.map(doc => ({
@@ -77,18 +85,18 @@ export const getLatestPrices = async () => {
 };
 
 /**
- * Get price history for a specific coin
+ * Get price history for a specific coin from a given provider's dataset.
  */
-export const getCoinHistory = async (symbol, limit = 50) => {
-  const history = await PriceHistory.find({ symbol })
+export const getCoinHistory = async (symbol, limit = 50, provider = 'synthetic') => {
+  const history = await PriceHistory.find({ symbol, provider })
     .sort({ timestamp: -1 })
     .limit(limit);
-    
+
   return history;
 };
 
-export const getSingleCoinSnapshot = async (symbol) => {
-  const record = await PriceHistory.findOne({ symbol }).sort({ timestamp: -1 });
+export const getSingleCoinSnapshot = async (symbol, provider = 'synthetic') => {
+  const record = await PriceHistory.findOne({ symbol, provider }).sort({ timestamp: -1 });
   if (record) {
     return { ...record.toObject(), price: record.close };
   }

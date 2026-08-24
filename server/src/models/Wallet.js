@@ -29,6 +29,10 @@ const walletSchema = new Schema(
       default: 0,
       min: 0,
     },
+    lastStipendClaimedAt: {
+      type: Date,
+      default: null,
+    },
   },
   { timestamps: true }
 );

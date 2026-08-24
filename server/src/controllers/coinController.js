@@ -4,6 +4,9 @@ import {
   syncLatestPrices,
   getSingleCoinSnapshot,
 } from '../services/coinService.js';
+import { getUserPriceProvider } from '../services/priceModeService.js';
+import { getSessionPercentChange24h, getLatestSimulatedPrice, getAnchorPriceBDT } from '../services/simulation/engine.js';
+import { SimulationSession } from '../models/SimulationSession.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { AppError } from '../utils/AppError.js';
 import { ERROR_CODES, SUPPORTED_SYMBOLS, BDT_PER_USD } from '../constants/index.js';
@@ -34,11 +37,42 @@ function toPublicCoin(doc) {
 }
 
 /**
+ * For simulated-mode users, PriceHistory only holds the static seed data
+ * (chart history) — the actual live price lives in SimulatedPriceTick, and
+ * PriceHistory's percentChange24h is a one-time snapshot from whenever
+ * seed:history last ran. Neither reflects the user's own live simulated
+ * price path (ordinary drift, or a triggered market event). Override both
+ * with the session's real live price and a freshly computed 24h change.
+ * Real mode keeps the DB-stored values, which the sync job already keeps
+ * fresh on its own every minute.
+ */
+async function withLiveSimulatedPrice(coins, userId, provider) {
+  if (provider !== 'synthetic' || !userId) return coins;
+
+  const session = await SimulationSession.findOne({ userId, status: 'active' });
+  if (!session) return coins;
+
+  return Promise.all(
+    coins.map(async (coin) => {
+      const latestTick = await getLatestSimulatedPrice(session._id, coin.symbol);
+      const priceBDT = latestTick?.priceBDT ?? (await getAnchorPriceBDT(coin.symbol));
+
+      return {
+        ...coin,
+        priceBDT,
+        percentChange24h: await getSessionPercentChange24h(session, coin.symbol, priceBDT),
+      };
+    })
+  );
+}
+
+/**
  * GET /api/coins — latest snapshot for all 6 supported symbols.
  */
 export const listCoins = asyncHandler(async (req, res) => {
-  const prices = await getLatestPrices();
-  const coins = prices.map(toPublicCoin);
+  const provider = await getUserPriceProvider(req.user?.id);
+  const prices = await getLatestPrices(provider);
+  const coins = await withLiveSimulatedPrice(prices.map(toPublicCoin), req.user?.id, provider);
   res.json({ coins });
 });
 
@@ -47,11 +81,13 @@ export const listCoins = asyncHandler(async (req, res) => {
  */
 export const getCoin = asyncHandler(async (req, res) => {
   const symbol = assertValidSymbol(req.params.symbol);
-  const doc = await getSingleCoinSnapshot(symbol);
+  const provider = await getUserPriceProvider(req.user?.id);
+  const doc = await getSingleCoinSnapshot(symbol, provider);
   if (!doc) {
     throw new AppError(`No price data available for ${symbol}`, 404, ERROR_CODES.NOT_FOUND);
   }
-  res.json({ coin: toPublicCoin(doc) });
+  const [coin] = await withLiveSimulatedPrice([toPublicCoin(doc)], req.user?.id, provider);
+  res.json({ coin });
 });
 
 /**
@@ -59,7 +95,8 @@ export const getCoin = asyncHandler(async (req, res) => {
  */
 export const getHistory = asyncHandler(async (req, res) => {
   const symbol = assertValidSymbol(req.params.symbol);
-  const raw = await fetchCoinHistoryFromDB(symbol);
+  const provider = await getUserPriceProvider(req.user?.id);
+  const raw = await fetchCoinHistoryFromDB(symbol, 50, provider);
   if (!raw || raw.length === 0) {
     throw new AppError(`No history found for ${symbol}`, 404, ERROR_CODES.NOT_FOUND);
   }

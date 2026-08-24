@@ -16,6 +16,17 @@ export const TRADE_FEE_RATE = 0.008;
 
 export const POINTS_EXCHANGE_RATE_BDT = 1000;
 
+// Daily stipend — a free top-up for users whose wallet is too low to do
+// anything (can't afford to trade, can't afford to bet/trigger an event, and
+// can't buy more points because cash is also low). Only available once every
+// 24h, and only when BOTH currencies are below their threshold, so it can't
+// be farmed as a steady income by a wallet that's still functional.
+export const STIPEND_COOLDOWN_MS = 24 * 60 * 60 * 1000;
+export const STIPEND_ELIGIBLE_CASH_BDT = 5000;
+export const STIPEND_ELIGIBLE_POINTS = 10;
+export const STIPEND_CASH_BDT = 10000;
+export const STIPEND_POINTS = 20;
+
 export const DISCLAIMER_TEXT =
   'Educational simulator only. All balances, trades, prices, and rewards are virtual; no real cryptocurrency or financial transaction occurs.';
 

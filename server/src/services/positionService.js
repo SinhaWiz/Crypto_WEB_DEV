@@ -109,10 +109,10 @@ async function openLeveragedPositionTransaction({ userId, symbol, side, quantity
   assertValidLeverage(leverage);
 
   const { priceBDT } = await resolveExecutionPrice(userId, symbol);
+  // Margin is the collateral locked (base size). Notional is the full leveraged exposure.
   const marginBDT = priceBDT * quantity;
   const notionalBDT = marginBDT * leverage;
   const openFeeBDT = notionalBDT * TRADE_FEE_RATE;
-  const totalDebitBDT = marginBDT + openFeeBDT;
 
   const mongoSession = await mongoose.startSession();
   try {
@@ -121,9 +121,6 @@ async function openLeveragedPositionTransaction({ userId, symbol, side, quantity
       const wallet = await Wallet.findOne({ userId }).session(mongoSession);
       if (!wallet) {
         throw new AppError('Wallet not found', 404, ERROR_CODES.NOT_FOUND);
-      }
-      if (wallet.cashBalanceBDT < totalDebitBDT) {
-        throw new AppError('Insufficient balance for this leveraged position', 400, ERROR_CODES.VALIDATION_ERROR);
       }
 
       const existingPosition = await LeveragedPosition.findOne({
@@ -140,6 +137,24 @@ async function openLeveragedPositionTransaction({ userId, symbol, side, quantity
         );
       }
 
+      // ── Cash flow (real long / short mechanics) ────────────────────────────
+      // Both sides only move the margin + fee in free cash.
+      // The full notional buy/sell is recorded on the Transaction (side = buy/sell)
+      // but the large notional amount is treated as financed / held collateral
+      // (exactly how real brokers handle leveraged & short positions).
+      //
+      // LONG  : post margin → buy the notional size (financed by leverage)
+      // SHORT : post margin → borrow + sell the notional size (proceeds held)
+      //
+      // On close the margin is released and pure PnL is settled.
+      const totalDebitBDT = marginBDT + openFeeBDT;
+      if (wallet.cashBalanceBDT < totalDebitBDT) {
+        throw new AppError(
+          `Insufficient balance to open this leveraged ${side} position`,
+          400,
+          ERROR_CODES.VALIDATION_ERROR
+        );
+      }
       wallet.cashBalanceBDT -= totalDebitBDT;
       await wallet.save({ session: mongoSession });
 
@@ -167,7 +182,7 @@ async function openLeveragedPositionTransaction({ userId, symbol, side, quantity
           {
             userId,
             symbol,
-            side: side === 'long' ? 'buy' : 'sell',
+            side: side === 'long' ? 'buy' : 'sell', // short open = sell (the borrowed asset)
             quantity,
             executionPriceBDT: priceBDT,
             feeBDT: openFeeBDT,
@@ -243,17 +258,39 @@ async function closeLeveragedPositionTransaction({ userId, symbol, side, quantit
       const closeMarginBDT = position.marginBDT * quantityShare;
       const notionalBDT = priceBDT * closeQuantity * position.leverage;
       const closeFeeBDT = notionalBDT * TRADE_FEE_RATE;
+
+      // Gross PnL (same formula for both sides)
       const grossPnlBDT =
         getSideMultiplier(position.side) * (priceBDT - position.entryPriceBDT) * closeQuantity * position.leverage;
+      // Loss is capped at the locked margin (no negative equity beyond collateral)
       const cappedGrossPnlBDT = Math.max(grossPnlBDT, -closeMarginBDT);
-      const netCreditBDT = closeMarginBDT + cappedGrossPnlBDT - closeFeeBDT;
 
       const wallet = await Wallet.findOne({ userId }).session(mongoSession);
       if (!wallet) {
         throw new AppError('Wallet not found', 404, ERROR_CODES.NOT_FOUND);
       }
 
-      wallet.cashBalanceBDT += netCreditBDT;
+      // ── Cash flow on close (real mechanics) ────────────────────────────────
+      // Both sides settle the same way (broker-style):
+      //   Release the locked margin + realize PnL − fee
+      //
+      // LONG  close = sell the financed position, unlock margin, settle PnL
+      // SHORT close = buy-to-cover, return borrowed asset, unlock margin, settle PnL
+      //
+      // This matches the classic definition while only requiring the margin
+      // as free cash (the large notional is handled as financed/held collateral).
+      const netCashChangeBDT = closeMarginBDT + cappedGrossPnlBDT - closeFeeBDT;
+
+      // Safety: should not go negative beyond available cash (loss already capped)
+      if (wallet.cashBalanceBDT + netCashChangeBDT < 0) {
+        throw new AppError(
+          'Insufficient cash to close this position.',
+          400,
+          ERROR_CODES.VALIDATION_ERROR
+        );
+      }
+
+      wallet.cashBalanceBDT += netCashChangeBDT;
       await wallet.save({ session: mongoSession });
 
       position.quantity -= closeQuantity;
@@ -278,7 +315,7 @@ async function closeLeveragedPositionTransaction({ userId, symbol, side, quantit
           {
             userId,
             symbol,
-            side: side === 'long' ? 'sell' : 'buy',
+            side: side === 'long' ? 'sell' : 'buy', // short close = buy (to cover)
             quantity: closeQuantity,
             executionPriceBDT: priceBDT,
             feeBDT: closeFeeBDT,
@@ -302,7 +339,7 @@ async function closeLeveragedPositionTransaction({ userId, symbol, side, quantit
         closeMarginBDT,
         closeFeeBDT,
         pnlBDT: cappedGrossPnlBDT,
-        netCreditBDT,
+        netCreditBDT: netCashChangeBDT,
       };
     });
 

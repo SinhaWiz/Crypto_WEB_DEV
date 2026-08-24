@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { listCoins } from '../services/coinsService';
 import { useMarketPrices } from '../hooks/useMarketPrices';
 import { COIN_META } from '../lib/coinMeta';
+import { useAuth } from '../features/auth/AuthContext';
 
 function formatBDT(value) {
   if (value === null || value === undefined) return '—';
@@ -14,6 +15,8 @@ function formatBDT(value) {
 
 export function MarketPage() {
   const navigate = useNavigate();
+  const { mode } = useAuth();
+  const isReal = mode === 'real';
   const [initialCoins, setInitialCoins] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -47,10 +50,12 @@ export function MarketPage() {
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
         <div>
           <h1 className="page-title">Cryptocurrency Market</h1>
-          <p className="page-subtitle">Live simulated prices — updates every 3 seconds</p>
+          <p className="page-subtitle">
+            {isReal ? 'Live market data — updates every 3 seconds' : 'Live simulated prices — updates every 3 seconds'}
+          </p>
         </div>
         <span className="badge badge-live" style={{ fontSize: 13 }}>
-          ● Live Simulation
+          {isReal ? '● Live Market Data' : '● Live Simulation'}
         </span>
       </div>
 

@@ -3,6 +3,7 @@ import { SUPPORTED_SYMBOLS, BDT_PER_USD } from '../../constants/index.js';
 import { PriceHistory } from '../../models/PriceHistory.js';
 import { SimulatedPriceTick } from '../../models/SimulatedPriceTick.js';
 import { seededNormal } from './seededRandom.js';
+import { getSingleCoinSnapshot } from '../coinService.js';
 
 // Fallback USD prices if DB has no history yet
 const FALLBACK_USD_ANCHORS = {
@@ -79,6 +80,20 @@ export async function buildSimulatedSnapshot(session) {
  * The price is stored and emitted in BDT.
  */
 export async function generateNextTick(session, symbol, now = new Date()) {
+  if (session.mode === 'real') {
+    const snapshot = await getSingleCoinSnapshot(symbol, 'coingecko');
+    const priceBDT = snapshot ? snapshot.close * BDT_PER_USD : await getAnchorPriceBDT(symbol);
+
+    return {
+      sessionId: session._id,
+      symbol,
+      priceBDT,
+      sourceWindow: session.sourceWindow,
+      seed: session.seed,
+      generatedAt: now,
+    };
+  }
+
   const difficulty = normalizeDifficulty(session.difficulty);
   const preset = DIFFICULTY_PRESETS[difficulty];
 
@@ -108,4 +123,28 @@ export async function generateNextTick(session, symbol, now = new Date()) {
  */
 export async function generateSessionTicks(session, now = new Date()) {
   return Promise.all(SUPPORTED_SYMBOLS.map((symbol) => generateNextTick(session, symbol, now)));
+}
+
+/**
+ * Percent change over the trailing 24h for a session's own simulated price
+ * path — computed live from that session's SimulatedPriceTick history rather
+ * than a static snapshot, so it actually moves with the live simulation
+ * (ordinary drift, and market-event shocks). If the session hasn't been
+ * running for a full 24h yet, falls back to its earliest recorded tick.
+ */
+export async function getSessionPercentChange24h(session, symbol, currentPriceBDT) {
+  const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+
+  const referenceTick =
+    (await SimulatedPriceTick.findOne({
+      sessionId: session._id,
+      symbol,
+      generatedAt: { $lte: twentyFourHoursAgo },
+    }).sort({ generatedAt: -1 })) ??
+    (await SimulatedPriceTick.findOne({ sessionId: session._id, symbol }).sort({ generatedAt: 1 }));
+
+  const referencePrice = referenceTick?.priceBDT;
+  if (!referencePrice || !currentPriceBDT) return null;
+
+  return ((currentPriceBDT - referencePrice) / referencePrice) * 100;
 }

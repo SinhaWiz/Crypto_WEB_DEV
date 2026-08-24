@@ -6,6 +6,7 @@ import { createApp } from './app.js';
 import { startHistoricalRefreshJob } from './jobs/historicalRefreshJob.js';
 import { startSimulationTickJob } from './jobs/simulationTickJob.js';
 import { startPredictionSettlementJob } from './jobs/predictionSettlementJob.js';
+import { startAmbientEventJob } from './jobs/ambientEventJob.js';
 import { registerMarketSocketHandlers } from './socket/marketSocket.js';
 
 async function start() {
@@ -17,12 +18,17 @@ async function start() {
     cors: { origin: env.CLIENT_ORIGIN, credentials: true },
   });
 
+  // Let controllers reach the socket server (e.g. to push an instant price
+  // update right after a market event fires), same instance the jobs below use.
+  app.set('io', io);
+
   // Register socket authentication + event handlers
   registerMarketSocketHandlers(io);
 
   // Start background jobs (pass io to the tick job for emissions)
   startSimulationTickJob(io);
   startPredictionSettlementJob(io);
+  startAmbientEventJob(io);
 
   httpServer.listen(env.PORT, () => {
     console.log(`Server listening on port ${env.PORT}`);

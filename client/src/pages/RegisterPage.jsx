@@ -8,11 +8,17 @@ const DIFFICULTIES = [
   { value: 'expert', label: 'Expert', desc: 'High volatility, near real-market intensity' },
 ];
 
+const MODES = [
+  { value: 'simulated', label: 'Simulated', desc: "Prices move on their own simulated path, anchored to today's real rate." },
+  { value: 'real', label: 'Real Market Data', desc: "Every price and chart tracks CoinGecko's actual market data." },
+];
+
 export function RegisterPage() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [difficulty, setDifficulty] = useState('beginner');
+  const [mode, setMode] = useState('simulated');
   const [error, setError] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -24,7 +30,7 @@ export function RegisterPage() {
     setIsSubmitting(true);
     setError(null);
     try {
-      await register({ name, email, password, difficulty });
+      await register({ name, email, password, difficulty, mode });
       navigate('/dashboard', { replace: true });
     } catch (err) {
       setError(err.message || 'Registration failed. Please try again.');
@@ -119,33 +125,33 @@ export function RegisterPage() {
             />
           </div>
 
-          {/* Difficulty Selector */}
+          {/* Price Mode Selector */}
           <div>
-            <label className="cs-label">Market Difficulty</label>
+            <label className="cs-label">Price Mode</label>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              {DIFFICULTIES.map(({ value, label, desc }) => (
+              {MODES.map(({ value, label, desc }) => (
                 <label
                   key={value}
-                  htmlFor={`diff-${value}`}
+                  htmlFor={`mode-${value}`}
                   style={{
                     display: 'flex',
                     alignItems: 'center',
                     gap: 12,
                     padding: '10px 14px',
                     borderRadius: 'var(--radius-md)',
-                    border: `1px solid ${difficulty === value ? 'var(--color-primary)' : 'var(--color-hairline)'}`,
-                    backgroundColor: difficulty === value ? 'rgba(252,213,53,0.06)' : 'transparent',
+                    border: `1px solid ${mode === value ? 'var(--color-primary)' : 'var(--color-hairline)'}`,
+                    backgroundColor: mode === value ? 'rgba(252,213,53,0.06)' : 'transparent',
                     cursor: 'pointer',
                     transition: 'all 150ms ease',
                   }}
                 >
                   <input
-                    id={`diff-${value}`}
+                    id={`mode-${value}`}
                     type="radio"
-                    name="difficulty"
+                    name="mode"
                     value={value}
-                    checked={difficulty === value}
-                    onChange={() => setDifficulty(value)}
+                    checked={mode === value}
+                    onChange={() => setMode(value)}
                     style={{ accentColor: 'var(--color-primary)', width: 16, height: 16, flexShrink: 0 }}
                   />
                   <div>
@@ -155,7 +161,50 @@ export function RegisterPage() {
                 </label>
               ))}
             </div>
+            <p style={{ fontSize: 11, color: 'var(--color-muted)', marginTop: 6 }}>
+              This can't be changed later — choose the experience you want to play.
+            </p>
           </div>
+
+          {/* Difficulty Selector — only meaningful for the simulated engine's volatility */}
+          {mode === 'simulated' && (
+            <div>
+              <label className="cs-label">Market Difficulty</label>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {DIFFICULTIES.map(({ value, label, desc }) => (
+                  <label
+                    key={value}
+                    htmlFor={`diff-${value}`}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 12,
+                      padding: '10px 14px',
+                      borderRadius: 'var(--radius-md)',
+                      border: `1px solid ${difficulty === value ? 'var(--color-primary)' : 'var(--color-hairline)'}`,
+                      backgroundColor: difficulty === value ? 'rgba(252,213,53,0.06)' : 'transparent',
+                      cursor: 'pointer',
+                      transition: 'all 150ms ease',
+                    }}
+                  >
+                    <input
+                      id={`diff-${value}`}
+                      type="radio"
+                      name="difficulty"
+                      value={value}
+                      checked={difficulty === value}
+                      onChange={() => setDifficulty(value)}
+                      style={{ accentColor: 'var(--color-primary)', width: 16, height: 16, flexShrink: 0 }}
+                    />
+                    <div>
+                      <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--color-ink)', margin: 0 }}>{label}</p>
+                      <p style={{ fontSize: 12, color: 'var(--color-muted)', margin: 0 }}>{desc}</p>
+                    </div>
+                  </label>
+                ))}
+              </div>
+            </div>
+          )}
 
           <button
             type="submit"
@@ -184,7 +233,8 @@ export function RegisterPage() {
             lineHeight: 1.5,
           }}
         >
-          By registering you agree this is an educational simulator. No real funds are involved.
+          By registering you agree this is an educational simulator. No real funds are involved —
+          even in Real Market Data mode, only the price data is real, your balance stays virtual.
         </p>
       </div>
     </div>

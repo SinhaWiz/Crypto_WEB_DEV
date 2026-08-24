@@ -26,17 +26,23 @@ export function useMarketPrices(initialCoins = []) {
     setPrices((current) => {
       const next = { ...current };
       initialCoins.forEach((coin) => {
-        const sym = typeof coin === 'string' ? coin : coin.symbol;
-        if (!next[sym] && typeof coin !== 'string') {
-          next[sym] = {
-            symbol: sym,
-            priceBDT: coin.priceBDT,
-            percentChange24h: coin.percentChange24h ?? null,
-            volume24h: coin.volume24h ?? null,
-            marketCap: coin.marketCap ?? null,
-            timestamp: coin.timestamp ?? null,
-          };
-        }
+        if (typeof coin === 'string') return;
+        const sym = coin.symbol;
+        const existing = next[sym];
+        // Live socket ticks/snapshots only ever carry symbol+priceBDT+timestamp
+        // (see buildSimulatedSnapshot/emitMarketTicks on the server) — they
+        // never include percentChange24h/volume24h/marketCap. So if a live
+        // update reaches this hook before this REST seed runs, `existing`
+        // already has a (real) priceBDT but permanently-null stats unless we
+        // still backfill them here rather than skipping the whole symbol.
+        next[sym] = {
+          symbol: sym,
+          priceBDT: existing?.priceBDT ?? coin.priceBDT,
+          percentChange24h: existing?.percentChange24h ?? coin.percentChange24h ?? null,
+          volume24h: existing?.volume24h ?? coin.volume24h ?? null,
+          marketCap: existing?.marketCap ?? coin.marketCap ?? null,
+          timestamp: existing?.timestamp ?? coin.timestamp ?? null,
+        };
       });
       previousPricesRef.current = next;
       return next;

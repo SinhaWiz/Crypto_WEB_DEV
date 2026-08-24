@@ -7,6 +7,9 @@ import { AUTH_COOKIE_NAME, ERROR_CODES } from '../constants/index.js';
 import { env } from '../config/env.js';
 import { User } from '../models/User.js';
 import { Wallet } from '../models/Wallet.js';
+import { SimulationSession } from '../models/SimulationSession.js';
+
+const PRICE_MODES = ['simulated', 'real'];
 
 function requireFields(body, fields) {
   const missing = fields.filter((field) => !body?.[field]);
@@ -38,9 +41,11 @@ export async function register(req, res) {
     throw new AppError('Password must be at least 8 characters', 400, ERROR_CODES.VALIDATION_ERROR);
   }
 
-  const { user, wallet } = await registerUser({ name, email, password });
+  const mode = PRICE_MODES.includes(req.body.mode) ? req.body.mode : 'simulated';
+
+  const { user, wallet, simulationSession } = await registerUser({ name, email, password, mode });
   setAuthCookie(res, user);
-  res.status(201).json({ user: toPublicUser(user), wallet });
+  res.status(201).json({ user: toPublicUser(user), wallet, mode: simulationSession.mode });
 }
 
 export async function login(req, res) {
@@ -50,9 +55,10 @@ export async function login(req, res) {
   const user = await loginUser({ email, password });
   setAuthCookie(res, user);
 
-  // Return wallet alongside user so the client can set both without a second round-trip
+  // Return wallet + mode alongside user so the client can set all three without extra round-trips
   const wallet = await Wallet.findOne({ userId: user._id });
-  res.json({ user: toPublicUser(user), wallet });
+  const session = await SimulationSession.findOne({ userId: user._id }).select('mode');
+  res.json({ user: toPublicUser(user), wallet, mode: session?.mode ?? 'simulated' });
 }
 
 export function logout(req, res) {
@@ -65,5 +71,6 @@ export async function me(req, res) {
   if (!user) {
     throw new AppError('User not found', 404, ERROR_CODES.NOT_FOUND);
   }
-  res.json({ user: toPublicUser(user) });
+  const session = await SimulationSession.findOne({ userId: user._id }).select('mode');
+  res.json({ user: toPublicUser(user), mode: session?.mode ?? 'simulated' });
 }

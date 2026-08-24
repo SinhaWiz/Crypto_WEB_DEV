@@ -40,7 +40,8 @@ function ResultBadge({ result }) {
 }
 
 export function PredictionsPage() {
-  const { wallet, refreshWallet } = useAuth();
+  const { wallet, refreshWallet, mode: priceMode } = useAuth();
+  const isReal = priceMode === 'real';
   const [symbol, setSymbol] = useState(SUPPORTED_SYMBOLS[0]);
   const [mode, setMode] = useState('buy');
   const [direction, setDirection] = useState('up');
@@ -218,7 +219,9 @@ export function PredictionsPage() {
                 {
                   step: '2',
                   title: 'The clock runs',
-                  text: "Your stake is locked in immediately. The prediction is judged against your own simulated price feed, sampled the instant the window closes.",
+                  text: isReal
+                    ? "Your stake is locked in immediately. The prediction is judged against your own live price feed, sampled the instant the window closes."
+                    : "Your stake is locked in immediately. The prediction is judged against your own simulated price feed, sampled the instant the window closes.",
                 },
                 {
                   step: '3',
@@ -288,7 +291,7 @@ export function PredictionsPage() {
               {[
                 'Once confirmed, a prediction can\'t be cancelled or adjusted before its close time.',
                 'Shorter windows (15 sec, 5 min) move fast and swing more — longer windows smooth out the noise.',
-                'Your simulated feed is personal to your account, separate from the public Market page ticker.',
+                'Your price feed is personal to your account, separate from the public Market page ticker.',
                 'Settled predictions — wins and losses alike — appear instantly in Your Predictions below.',
               ].map((text) => (
                 <div key={text} style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>

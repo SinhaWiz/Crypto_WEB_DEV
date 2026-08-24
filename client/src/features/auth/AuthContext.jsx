@@ -7,12 +7,14 @@ const AuthContext = createContext(null);
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [wallet, setWallet] = useState(null);
+  const [mode, setMode] = useState(null);
   const [loading, setLoading] = useState(true);
 
   const fetchUserData = useCallback(async () => {
     try {
       const userRes = await httpClient.get('/api/auth/me');
       setUser(userRes.user);
+      setMode(userRes.mode ?? null);
 
       if (userRes.user) {
         const walletRes = await httpClient.get('/api/wallet');
@@ -22,6 +24,7 @@ export function AuthProvider({ children }) {
     } catch (err) {
       setUser(null);
       setWallet(null);
+      setMode(null);
       disconnectSocket();
     } finally {
       setLoading(false);
@@ -48,6 +51,7 @@ export function AuthProvider({ children }) {
     const res = await httpClient.post('/api/auth/login', credentials);
     setUser(res.user);
     setWallet(res.wallet);
+    setMode(res.mode ?? null);
     connectSocket();
     return res;
   };
@@ -56,6 +60,7 @@ export function AuthProvider({ children }) {
     const res = await httpClient.post('/api/auth/register', data);
     setUser(res.user);
     setWallet(res.wallet);
+    setMode(res.mode ?? null);
     connectSocket();
     return res;
   };
@@ -68,6 +73,7 @@ export function AuthProvider({ children }) {
     } finally {
       setUser(null);
       setWallet(null);
+      setMode(null);
       disconnectSocket();
     }
   };
@@ -77,6 +83,7 @@ export function AuthProvider({ children }) {
       value={{
         user,
         wallet,
+        mode,
         loading,
         login,
         register,

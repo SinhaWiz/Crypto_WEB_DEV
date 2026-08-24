@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { getCoin, getCoinHistory } from '../services/coinsService';
 import { getOpenPositions, getPortfolio } from '../services/tradeService';
 import { useMarketPrices } from '../hooks/useMarketPrices';
+import { useAuth } from '../features/auth/AuthContext';
 import { TradePanel } from '../components/TradePanel';
 import {
   LineChart,
@@ -53,6 +54,8 @@ function CustomTooltip({ active, payload }) {
 export function CoinPage() {
   const { symbol } = useParams();
   const navigate = useNavigate();
+  const { mode } = useAuth();
+  const isReal = mode === 'real';
   const normalizedSymbol = symbol.toUpperCase();
   const meta = COIN_META[normalizedSymbol] ?? { symbol: normalizedSymbol[0], name: normalizedSymbol };
 
@@ -174,7 +177,7 @@ export function CoinPage() {
                   <span style={{ fontSize: 13, color: 'var(--color-muted)' }}>{meta.name}</span>
                 </div>
                 <span className="badge badge-live" style={{ marginTop: 4, fontSize: 11 }}>
-                  ● Live Simulation
+                  {isReal ? '● Live Market Data' : '● Live Simulation'}
                 </span>
               </div>
             </div>
