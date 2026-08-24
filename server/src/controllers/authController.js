@@ -22,13 +22,12 @@ function requireFields(body, fields) {
     );
   }
 }
-
 function setAuthCookie(res, user) {
   const token = signToken({ sub: user._id.toString(), role: user.role });
   res.cookie(AUTH_COOKIE_NAME, token, {
     httpOnly: true,
-    secure: env.NODE_ENV === 'production',
-    sameSite: 'lax',
+    secure: true,               // always true for cross-site
+    sameSite: 'none',           // required for Vercel ↔ Render
     maxAge: parseDurationMs(env.JWT_EXPIRES_IN),
   });
 }
