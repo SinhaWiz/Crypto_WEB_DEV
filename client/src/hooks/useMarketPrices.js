@@ -65,15 +65,33 @@ export function useMarketPrices(initialCoins = []) {
         const nextFlashes = {};
 
         incomingPrices.forEach((price) => {
+          const existing = current[price.symbol];
           const previousPrice = previousPricesRef.current[price.symbol]?.priceBDT;
 
+          // A scheduled tick and an instant push (e.g. a market event) can
+          // race over the socket. Since price.timestamp is always strictly
+          // increasing at the source, drop anything older than what's
+          // already displayed instead of letting it flicker the price back.
+          const incomingTs = price.timestamp ? new Date(price.timestamp).getTime() : now;
+          const existingTs = existing?.timestamp ? new Date(existing.timestamp).getTime() : null;
+
+          if (existingTs !== null && incomingTs < existingTs) {
+            next[price.symbol] = {
+              ...existing,
+              percentChange24h: existing.percentChange24h ?? price.percentChange24h ?? null,
+              volume24h: existing.volume24h ?? price.volume24h ?? null,
+              marketCap: existing.marketCap ?? price.marketCap ?? null,
+            };
+            return;
+          }
+
           next[price.symbol] = {
-            ...current[price.symbol],
+            ...existing,
             symbol: price.symbol,
             priceBDT: price.priceBDT,
-            percentChange24h: price.percentChange24h ?? current[price.symbol]?.percentChange24h ?? null,
-            volume24h: price.volume24h ?? current[price.symbol]?.volume24h ?? null,
-            marketCap: price.marketCap ?? current[price.symbol]?.marketCap ?? null,
+            percentChange24h: price.percentChange24h ?? existing?.percentChange24h ?? null,
+            volume24h: price.volume24h ?? existing?.volume24h ?? null,
+            marketCap: price.marketCap ?? existing?.marketCap ?? null,
             timestamp: price.timestamp ?? now,
           };
 

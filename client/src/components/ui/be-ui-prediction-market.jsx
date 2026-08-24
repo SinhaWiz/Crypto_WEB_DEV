@@ -234,11 +234,6 @@ const DEFAULT_OUTCOMES = [
   { id: 'down', label: 'Down', price: 0.5 },
 ];
 
-const MODES = [
-  { id: 'buy', label: 'Buy' },
-  { id: 'sell', label: 'Sell' },
-];
-
 const DEFAULT_QUICK_AMOUNTS = [10, 50, 100, 500];
 
 const DIGIT_TRANSITION = {
@@ -298,17 +293,17 @@ function formatMultiplier(price) {
   return `${(1 / safePrice).toFixed(2)}×`;
 }
 
-function buildQuote({ order, outcome, balance, position, minTrade }) {
+function buildQuote({ order, outcome, balance, minTrade }) {
   const amount = parseAmount(order.amount);
   const price = Math.max(0.01, Math.min(0.99, outcome.price));
-  const shares = order.mode === 'buy' ? amount / price : amount;
-  const payout = order.mode === 'buy' ? shares : amount * price;
+  const shares = amount / price;
+  const payout = shares;
 
   if (amount <= 0) {
     return { valid: false, amount, price, shares: 0, payout: 0, error: 'Enter an amount' };
   }
 
-  if (order.mode === 'buy' && amount < minTrade) {
+  if (amount < minTrade) {
     return {
       valid: false,
       amount,
@@ -319,12 +314,8 @@ function buildQuote({ order, outcome, balance, position, minTrade }) {
     };
   }
 
-  if (order.mode === 'buy' && amount > balance) {
+  if (amount > balance) {
     return { valid: false, amount, price, shares, payout, error: 'Insufficient points' };
-  }
-
-  if (order.mode === 'sell' && amount > position) {
-    return { valid: false, amount, price, shares, payout, error: 'Not enough shares' };
   }
 
   return { valid: true, amount, price, shares, payout };
@@ -362,11 +353,11 @@ function payoutTickerSize(value) {
   return 'text-4xl';
 }
 
-function AnimatedAmountInput({ id, value, mode, inputSize, disabled, reduce, onChange }) {
+function AnimatedAmountInput({ id, value, inputSize, disabled, reduce, onChange }) {
   const displayValue = value || '0';
   const chars = keyedAmountChars(displayValue);
   const inputStyle = { '--amount-chars': String(chars.length) };
-  const label = mode === 'buy' ? 'Points to stake' : 'Shares';
+  const label = 'Points to stake';
 
   return (
     <div className="flex min-w-0 items-center justify-center overflow-hidden">
@@ -428,7 +419,6 @@ export function PredictionMarket({
   authenticated = true,
   orderTypeLabel = 'Market',
   balance = 500,
-  positions = {},
   quickAmounts = DEFAULT_QUICK_AMOUNTS,
   minTrade = 1,
   className,
@@ -441,11 +431,9 @@ export function PredictionMarket({
 
   const selectedOutcome = outcomes.find((outcome) => outcome.id === order.outcomeId) ?? outcomes[0];
 
-  const position = positions[selectedOutcome.id] ?? 0;
-
   const quote = useMemo(
-    () => buildQuote({ order, outcome: selectedOutcome, balance, position, minTrade }),
-    [balance, minTrade, order, position, selectedOutcome],
+    () => buildQuote({ order, outcome: selectedOutcome, balance, minTrade }),
+    [balance, minTrade, order, selectedOutcome],
   );
 
   const setOrderValue = useCallback(
@@ -461,12 +449,7 @@ export function PredictionMarket({
   };
 
   const setMax = () => {
-    if (order.mode === 'buy') {
-      setOrderValue({ amount: String(Math.floor(balance)) });
-      return;
-    }
-
-    setOrderValue({ amount: position.toFixed(position % 1 === 0 ? 0 : 2) });
+    setOrderValue({ amount: String(Math.floor(balance)) });
   };
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -493,32 +476,10 @@ export function PredictionMarket({
         classNames?.root,
       )}
     >
-      <div className={cn('border-b border-border/80 px-4 pt-4', classNames?.header)}>
-        <div className="flex items-end justify-between gap-4">
-          <Tabs
-            value={order.mode}
-            onValueChange={(mode) => setOrderValue({ mode, amount: '' })}
-            variant="underline"
-            className={cn('shrink-0', classNames?.tabs)}
-          >
-            <TabsList className="gap-5 border-b-0 bg-transparent p-0">
-              {MODES.map((mode) => (
-                <TabsTrigger
-                  key={mode.id}
-                  value={mode.id}
-                  className="px-0 pb-3 pt-0 text-2xl font-semibold"
-                  indicatorClassName="h-0.5 bg-foreground"
-                >
-                  {mode.label}
-                </TabsTrigger>
-              ))}
-            </TabsList>
-          </Tabs>
-
-          <span className="mb-3 inline-flex items-center gap-2 text-xl font-semibold text-foreground">
-            {orderTypeLabel}
-          </span>
-        </div>
+      <div className={cn('border-b border-border/80 px-4 py-4', classNames?.header)}>
+        <span className="inline-flex items-center gap-2 text-2xl font-semibold text-foreground">
+          {orderTypeLabel}
+        </span>
       </div>
 
       <div className="space-y-4 p-3">
@@ -559,13 +520,12 @@ export function PredictionMarket({
         <div className={cn('rounded-3xl bg-card p-4', classNames?.amount)}>
           <div className="flex min-h-24 flex-col items-center justify-center gap-5 text-center">
             <label htmlFor={inputId} className="mr-6 text-xl font-medium text-foreground">
-              {order.mode === 'buy' ? 'Points to stake' : 'Shares'}
+              Points to stake
             </label>
 
             <div className="w-full min-w-0">
               <AnimatedAmountInput
                 id={inputId}
-                mode={order.mode}
                 value={order.amount}
                 disabled={isSubmitting}
                 inputSize={inputSize}
@@ -584,7 +544,7 @@ export function PredictionMarket({
                 onClick={() => addAmount(amount)}
                 className="h-9 rounded-xl bg-background px-3.5 text-sm font-semibold text-foreground transition-[background-color,transform] duration-150 active:scale-95 disabled:pointer-events-none disabled:opacity-50"
               >
-                {order.mode === 'buy' ? formatCompactPoints(amount) : `+${amount}`}
+                {formatCompactPoints(amount)}
               </button>
             ))}
 
@@ -605,7 +565,7 @@ export function PredictionMarket({
           <div className="mb-4 flex items-end justify-between gap-3">
             <div className="min-w-0 shrink">
               <div className="flex items-center gap-2 text-xl font-semibold text-foreground">
-                {order.mode === 'buy' ? 'To win' : 'To receive'}
+                To win
                 <Banknote className="h-5 w-5 text-emerald-500" />
               </div>
 
