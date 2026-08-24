@@ -137,32 +137,25 @@ async function openLeveragedPositionTransaction({ userId, symbol, side, quantity
         );
       }
 
-      // ── Cash flow (real mechanics for both sides) ──────────────────────────
-      // LONG  (real leveraged buy):
-      //   Buy the full notional size at market.
-      //   Cash -= notional + fee
+      // ── Cash flow (real long / short mechanics) ────────────────────────────
+      // Both sides only move the margin + fee in free cash.
+      // The full notional buy/sell is recorded on the Transaction (side = buy/sell)
+      // but the large notional amount is treated as financed / held collateral
+      // (exactly how real brokers handle leveraged & short positions).
       //
-      // SHORT (real short-sell):
-      //   Borrow the asset and sell it immediately at market.
-      //   Cash += notional - fee
+      // LONG  : post margin → buy the notional size (financed by leverage)
+      // SHORT : post margin → borrow + sell the notional size (proceeds held)
       //
-      // Margin is still recorded on the position for display, unrealized PnL %,
-      // and as the maximum loss cap.
-      if (side === 'long') {
-        const totalDebitBDT = notionalBDT + openFeeBDT;
-        if (wallet.cashBalanceBDT < totalDebitBDT) {
-          throw new AppError(
-            'Insufficient balance to open this leveraged long position',
-            400,
-            ERROR_CODES.VALIDATION_ERROR
-          );
-        }
-        wallet.cashBalanceBDT -= totalDebitBDT;
-      } else {
-        // short – receive the full sale proceeds
-        const netCashChangeBDT = notionalBDT - openFeeBDT;
-        wallet.cashBalanceBDT += netCashChangeBDT;
+      // On close the margin is released and pure PnL is settled.
+      const totalDebitBDT = marginBDT + openFeeBDT;
+      if (wallet.cashBalanceBDT < totalDebitBDT) {
+        throw new AppError(
+          `Insufficient balance to open this leveraged ${side} position`,
+          400,
+          ERROR_CODES.VALIDATION_ERROR
+        );
       }
+      wallet.cashBalanceBDT -= totalDebitBDT;
       await wallet.save({ session: mongoSession });
 
       const [position] = await LeveragedPosition.create(
@@ -278,31 +271,23 @@ async function closeLeveragedPositionTransaction({ userId, symbol, side, quantit
       }
 
       // ── Cash flow on close (real mechanics) ────────────────────────────────
-      // LONG close (real sell):
-      //   Sell the full notional size at current market price.
-      //   Cash += currentNotional − fee
+      // Both sides settle the same way (broker-style):
+      //   Release the locked margin + realize PnL − fee
       //
-      // SHORT close (real buy-to-cover):
-      //   Buy the asset back at current price and return it to the lender.
-      //   Cash -= currentNotional + fee
+      // LONG  close = sell the financed position, unlock margin, settle PnL
+      // SHORT close = buy-to-cover, return borrowed asset, unlock margin, settle PnL
       //
-      // Overall for both sides:
-      //   Net PnL ≈ (closeNotional − entryNotional) * direction − fees
-      let netCashChangeBDT;
-      if (side === 'long') {
-        // Real sell
-        netCashChangeBDT = notionalBDT - closeFeeBDT;
-      } else {
-        // Real buy-to-cover
-        netCashChangeBDT = -(notionalBDT + closeFeeBDT);
+      // This matches the classic definition while only requiring the margin
+      // as free cash (the large notional is handled as financed/held collateral).
+      const netCashChangeBDT = closeMarginBDT + cappedGrossPnlBDT - closeFeeBDT;
 
-        if (wallet.cashBalanceBDT + netCashChangeBDT < 0) {
-          throw new AppError(
-            'Insufficient cash to buy-to-cover this short position. Add funds or wait for a lower price.',
-            400,
-            ERROR_CODES.VALIDATION_ERROR
-          );
-        }
+      // Safety: should not go negative beyond available cash (loss already capped)
+      if (wallet.cashBalanceBDT + netCashChangeBDT < 0) {
+        throw new AppError(
+          'Insufficient cash to close this position.',
+          400,
+          ERROR_CODES.VALIDATION_ERROR
+        );
       }
 
       wallet.cashBalanceBDT += netCashChangeBDT;
